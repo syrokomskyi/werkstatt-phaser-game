@@ -47,7 +47,9 @@
       "default": "./src/release-evidence/phaser-evidence.ts"
     }
   },
-  "files": ["src"],
+  "files": [
+    "src"
+  ],
   "scripts": {
     "lint": "pnpm exec eslint \"src/**/*.ts\"",
     "typecheck": "pnpm exec tsc -p tsconfig.json --noEmit",
@@ -70,5 +72,6 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "8.65.0",
     "vitest": "^4.1.10"
-  }
+  },
+  "packageManager": "pnpm@11.10.0"
 }

@@ -1,12 +1,20 @@
 {
-  "extends": "../../tsconfig/node-lib.json",
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "preserve",
+    "noEmit": true,
+    "declaration": true,
+    "rewriteRelativeImportExtensions": true,
+    "types": [
+      "node"
+    ],
     "rootDir": ".",
     "outDir": "dist",
-    "noEmit": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts"
+  ],
   "exclude": [
     "src/**/*.test.ts",
     "src/**/__tests__/**",
