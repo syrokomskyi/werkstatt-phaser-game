@@ -63,7 +63,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@warpgogol/werkstatt": "*",
+    "@warpgogol/werkstatt": "1.4.0",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
