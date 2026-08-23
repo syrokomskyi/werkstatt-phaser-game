@@ -5,7 +5,7 @@
 projectDir: packages/werkstatt-phaser-game
 destName: werkstatt-phaser-game
 standalone: true
-versionBump: patch
+versionBump: minor
 
 workspacePrefixes:
   - "@warpgogol/"
