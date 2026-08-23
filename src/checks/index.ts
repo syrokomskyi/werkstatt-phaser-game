@@ -21,6 +21,7 @@ import { validateAssets } from "./assets-validate.ts";
 import { validateScenes } from "./scenes-validate.ts";
 import { validateBundle } from "./bundle-validate.ts";
 import { scanSecrets } from "./secret-scan.ts";
+import { validateTypeScript } from "./typescript-validate.ts";
 
 export async function runPhaserCheckGate(ctx: PluginHookContext): Promise<HookResult> {
   const projectRoot = ctx.workpiecePath ?? ctx.workspaceRoot;
@@ -46,8 +47,13 @@ export async function runPhaserCheckGate(ctx: PluginHookContext): Promise<HookRe
     errors.push(`phaser.secret.scan: ${secretResult.data?.violations.length ?? 0} violations`);
   }
 
+  const tsResult = await validateTypeScript(projectRoot);
+  if (tsResult.exitCode !== 0) {
+    errors.push(`phaser.typescript.validate: ${tsResult.data?.violations.length ?? 0} violations`);
+  }
+
   ctx.logger.info(
-    `checkGate: assets=${assetsResult.data?.status}, scenes=${scenesResult.data?.status}, bundle=${bundleResult.data?.status}, secrets=${secretResult.data?.status}`,
+    `checkGate: assets=${assetsResult.data?.status}, scenes=${scenesResult.data?.status}, bundle=${bundleResult.data?.status}, secrets=${secretResult.data?.status}, typescript=${tsResult.data?.status}`,
   );
 
   return {
@@ -60,3 +66,4 @@ export { validateAssets } from "./assets-validate.ts";
 export { validateScenes } from "./scenes-validate.ts";
 export { validateBundle } from "./bundle-validate.ts";
 export { scanSecrets } from "./secret-scan.ts";
+export { validateTypeScript } from "./typescript-validate.ts";

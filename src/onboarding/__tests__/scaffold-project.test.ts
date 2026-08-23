@@ -33,6 +33,7 @@ describe("scaffoldPhaserProject", () => {
 
     expect(result.success).toBe(true);
     const files = result.data as { filesCreated: string[] };
+    expect(files.filesCreated).toContain("src/scenes/scene-keys.ts");
     expect(files.filesCreated).toContain("src/scenes/boot.ts");
     expect(files.filesCreated).toContain("src/assets/manifest.yaml");
     expect(files.filesCreated).toContain("phaser.config.ts");
@@ -41,21 +42,44 @@ describe("scaffoldPhaserProject", () => {
     expect(files.filesCreated).toContain("tsconfig.json");
   });
 
-  it("creates boot scene with BootScene class", async () => {
+  it("creates scene-keys.ts with SCENE_KEYS constant", async () => {
+    await scaffoldPhaserProject(makeCtx(projectPath));
+
+    const content = await readFile(join(projectPath, "src", "scenes", "scene-keys.ts"), "utf-8");
+    expect(content).toContain("SCENE_KEYS");
+    expect(content).toContain("as const");
+    expect(content).toContain("SceneKey");
+  });
+
+  it("creates boot scene with SCENE_KEYS import and typed lifecycle", async () => {
     await scaffoldPhaserProject(makeCtx(projectPath));
 
     const bootContent = await readFile(join(projectPath, "src", "scenes", "boot.ts"), "utf-8");
     expect(bootContent).toContain("export class BootScene");
     expect(bootContent).toContain("Phaser.Scene");
+    expect(bootContent).toContain('import { SCENE_KEYS }');
+    expect(bootContent).toContain("SCENE_KEYS.Boot");
+    expect(bootContent).toContain("preload(): void");
+    expect(bootContent).toContain("create(): void");
   });
 
-  it("creates phaser.config.ts with boot scene registered", async () => {
+  it("creates phaser.config.ts with Phaser.Types.Core.GameConfig", async () => {
     await scaffoldPhaserProject(makeCtx(projectPath));
 
     const configContent = await readFile(join(projectPath, "phaser.config.ts"), "utf-8");
+    expect(configContent).toContain("Phaser.Types.Core.GameConfig");
     expect(configContent).toContain("BootScene");
     expect(configContent).toContain("bundleBudget");
     expect(configContent).toContain("5242880");
+    expect(configContent).not.toContain("PhaserGameConfig");
+  });
+
+  it("creates main.ts without as-cast", async () => {
+    await scaffoldPhaserProject(makeCtx(projectPath));
+
+    const mainContent = await readFile(join(projectPath, "src", "main.ts"), "utf-8");
+    expect(mainContent).toContain("new Phaser.Game(config)");
+    expect(mainContent).not.toContain("as Phaser.Types.Core.GameConfig");
   });
 
   it("creates empty asset manifest", async () => {

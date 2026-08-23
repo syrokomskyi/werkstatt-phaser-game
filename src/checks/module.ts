@@ -16,6 +16,7 @@ import { createAssetsValidateCommand } from "./assets-validate.ts";
 import { createScenesValidateCommand } from "./scenes-validate.ts";
 import { createBundleValidateCommand } from "./bundle-validate.ts";
 import { createSecretScanCommand } from "./secret-scan.ts";
+import { createTypeScriptValidateCommand } from "./typescript-validate.ts";
 
 export function createPhaserCheckModule(): KernelModule {
   return {
@@ -26,6 +27,7 @@ export function createPhaserCheckModule(): KernelModule {
       registry.registerCommand(createScenesValidateCommand());
       registry.registerCommand(createBundleValidateCommand());
       registry.registerCommand(createSecretScanCommand());
+      registry.registerCommand(createTypeScriptValidateCommand());
     },
   };
 }

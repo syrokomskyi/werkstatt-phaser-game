@@ -9,7 +9,7 @@
 1. Сохранить предсказуемость поведения валидаторов и хуков.
 2. Не смешивать логику валидации с логикой деплоя или сборки.
 3. Делать небольшие, типизированные и тестируемые изменения.
-4. Не ломать контракт `werkstatt/plugin@1`, инварианты PHASER-01..04 и существующие команды.
+4. Не ломать контракт `werkstatt/plugin@1`, инварианты PHASER-01..05 и существующие команды.
 
 ## Стек
 
@@ -49,13 +49,14 @@ src/
   paths/
     phaser-paths.ts                 # Константы путей Phaser-стека
   invariants/
-    phaser-invariants.ts            # Декларации инвариантов PHASER-01..04
+    phaser-invariants.ts            # Декларации инвариантов PHASER-01..05
   checks/
     assets-validate.ts              # phaser.assets.validate (PHASER-02)
     scenes-validate.ts              # phaser.scenes.validate (PHASER-01)
     bundle-validate.ts              # phaser.bundle.validate (PHASER-03)
     secret-scan.ts                  # phaser.secret.scan (PHASER-04)
-    index.ts                        # checkGate — запуск всех 4 валидаторов
+    typescript-validate.ts          # phaser.typescript.validate (PHASER-05)
+    index.ts                        # checkGate — запуск всех 5 валидаторов
     module.ts                       # Kernel module регистрации валидаторов
     __tests__/                      # Модульные тесты валидаторов
   build/
@@ -71,6 +72,23 @@ src/
   release-evidence/
     phaser-evidence.ts              # hooks.releaseEvidence — SHA-256 хеши
     __tests__/                      # Тесты release evidence
+```
+
+Скаффолд генерирует:
+
+```text
+<project>/
+  src/
+    scenes/
+      scene-keys.ts                 # SCENE_KEYS константы и SceneKey тип
+      boot.ts                       # BootScene с типизированным жизненным циклом
+    assets/
+      manifest.yaml                 # Пустой манифест ассетов
+    main.ts                         # new Phaser.Game(config) без as-cast
+  phaser.config.ts                  # Phaser.Types.Core.GameConfig & { bundleBudget }
+  vite.config.ts
+  package.json
+  tsconfig.json
 ```
 
 Следуй уже существующей структуре репозитория, если она отличается от этой. Не перемещай файлы и не делай крупный рефакторинг без необходимости для задачи.
@@ -92,6 +110,23 @@ src/
 - Держи логику валидаторов отдельно от логики деплоя и сборки.
 - Не изменяй `tsconfig.json` и настройки сборки без явной причины и пояснения.
 
+## TypeScript-first best practices (RFC-0933, PHASER-05)
+
+При работе с Phaser-проектами агенты MUST следовать этим правилам:
+
+1. **Нет `.js` файлов в `src/`.** Все исходники — `.ts`. Vite компилирует TypeScript.
+2. **Нет `any`.** Используй типы Phaser (`Phaser.GameObjects.Sprite`, `Phaser.Physics.Arcade.Body`) или `unknown` с type guards.
+3. **Нет `as any`.** Если тип Phaser не подходит — исправь использование или используй правильную type assertion.
+4. **Нет `@ts-ignore` / `@ts-nocheck`.** Исправь ошибку типа. Эти директивы детектируются PHASER-05.
+5. **`Phaser.Types.Core.GameConfig` для конфига.** Не создавай кастомный интерфейс конфига. Расширяй через intersection type если нужны кастомные поля.
+6. **Ключи сцен как константы.** Все ключи сцен — в `src/scenes/scene-keys.ts` как `const` объект. Используй `SCENE_KEYS.SceneName` в конструкторе сцены и в конфиге. Не хардкоди строковые литералы.
+7. **Типизированный жизненный цикл сцен.** Методы `preload`, `create`, `update` — с явными возвращаемыми типами (`: void`).
+8. **Phaser input system.** Не используй `addEventListener` на `window` или `document`. Используй `this.input.on(Phaser.Input.Events.POINTER_DOWN, ...)`.
+9. **Типы событий Phaser.** Используй `Phaser.Input.Events.*`, `Phaser.Scenes.Events.*`, `Phaser.Animations.Events.*` — не строковые литералы.
+10. **Явный импорт Phaser.** `import Phaser from "phaser"` в каждом файле, использующем `Phaser.` namespace.
+11. **Нет прямого DOM.** Используй `this.add.dom()`, `this.cameras.main`, `this.scale.resize()` — Phaser API. Не `document.getElementById` или прямой доступ к `canvas`.
+12. **Prefab pattern.** Переиспользуемые объекты наследуют `Phaser.GameObjects.Container` (или `Sprite`, `Image`) с типизированными параметрами.
+
 ## Ассеты
 
 - Валидатор `phaser.assets.validate` ожидает манифест ассетов в `src/assets/manifest.yaml`.
@@ -106,8 +141,9 @@ src/
 | PHASER-02 | Каждый ассет из манифеста должен существовать и не должно быть незарегистрированных ассетов | `phaser.assets.validate` |
 | PHASER-03 | Размер бандла (gzipped) не должен превышать бюджет (по умолчанию 5 МБ) | `phaser.bundle.validate` |
 | PHASER-04 | Не должно быть хардкоженных API-ключей или секретов в исходниках | `phaser.secret.scan` |
+| PHASER-05 | TypeScript-first: нет `.js` файлов, нет `any`, нет `@ts-ignore`, использовать `Phaser.Types.Core.GameConfig` и `SCENE_KEYS` | `phaser.typescript.validate` |
 
-`checkGate` запускает все 4 валидатора последовательно. Все должны пройти.
+`checkGate` запускает все 5 валидаторов последовательно. Все должны пройти.
 
 ## Инъекция учётных данных
 
@@ -147,7 +183,7 @@ src/
 | `deployAdapters` | `github-pages`, `cloudflare-pages` |
 | `hooks` | `build`, `checkGate`, `releaseEvidence`, `scaffoldProject` |
 | `paths` | `src` (contentDir), `dist` (distDir), `phaser.config.ts` + `src/main.ts` (entryPoints) |
-| `invariants` | PHASER-01..04 |
+| `invariants` | PHASER-01..05 |
 
 ### RFC-0855
 

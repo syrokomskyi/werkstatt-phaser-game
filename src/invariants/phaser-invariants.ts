@@ -16,8 +16,7 @@ import type { StackInvariant } from "@warpgogol/werkstatt/plugin";
 export const PHASER_INVARIANTS: StackInvariant[] = [
   {
     id: "PHASER-01",
-    description:
-      "Every scene in src/scenes/ must be registered in phaser.config.ts",
+    description: "Every scene in src/scenes/ must be registered in phaser.config.ts",
     check: "phaser.scenes.validate",
   },
   {
@@ -28,8 +27,7 @@ export const PHASER_INVARIANTS: StackInvariant[] = [
   },
   {
     id: "PHASER-03",
-    description:
-      "Bundle size must not exceed the declared budget (default 5 MB gzipped)",
+    description: "Bundle size must not exceed the declared budget (default 5 MB gzipped)",
     check: "phaser.bundle.validate",
   },
   {
@@ -37,5 +35,11 @@ export const PHASER_INVARIANTS: StackInvariant[] = [
     description:
       "No hardcoded API keys or secrets in game source — enforced by secret scan in checkGate",
     check: "phaser.secret.scan",
+  },
+  {
+    id: "PHASER-05",
+    description:
+      "TypeScript-first source: no .js files, no any types, no ts-ignore, use Phaser.Types.Core.GameConfig and SCENE_KEYS constants",
+    check: "phaser.typescript.validate",
   },
 ];

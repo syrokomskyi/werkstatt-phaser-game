@@ -110,7 +110,7 @@ async function readPhaserConfig(projectRoot: string): Promise<string> {
 
 function extractRegisteredScenes(configContent: string): Set<string> {
   const scenes = new Set<string>();
-  const sceneRegex = /scene\s*:\s*([A-Z][A-Za-z0-9_]+)/g;
+  const sceneRegex = /scene\s*:\s*\[?\s*([A-Z][A-Za-z0-9_]+)/g;
   let match: RegExpExecArray | null;
   while ((match = sceneRegex.exec(configContent)) !== null) {
     scenes.add(match[1]!);
