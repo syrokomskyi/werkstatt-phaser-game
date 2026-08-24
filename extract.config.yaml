@@ -15,7 +15,7 @@ preservePackages:
   - "@warpgogol/werkstatt-phaser-game"
   - "@warpgogol/werkstatt-engine"
   - "@warpgogol/werkstatt-shared"
-packageManager: "pnpm"
+packageManager: pnpm
 
 ci:
   provider: github-actions
