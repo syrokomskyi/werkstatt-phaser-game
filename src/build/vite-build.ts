@@ -18,7 +18,7 @@
 */
 
 import { execFileSync } from "node:child_process";
-import type { PluginHookContext, HookResult } from "@warpgogol/werkstatt-engine/plugin";
+import type { PluginHookContext, HookResult } from "@warpgogol/werkstatt-shared/plugin";
 
 export async function runViteBuild(ctx: PluginHookContext): Promise<HookResult> {
   const workpiecePath = ctx.workpiecePath ?? ctx.workspaceRoot;

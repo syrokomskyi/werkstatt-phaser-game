@@ -24,7 +24,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { byteHash, byteHashFile } from "@warpgogol/werkstatt-engine/fingerprint";
 import type { Dirent } from "node:fs";
-import type { PluginHookContext, HookResult } from "@warpgogol/werkstatt-engine/plugin";
+import type { PluginHookContext, HookResult } from "@warpgogol/werkstatt-shared/plugin";
 
 export interface PhaserReleaseEvidence {
   bundleHash: string;

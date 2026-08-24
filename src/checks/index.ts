@@ -16,7 +16,7 @@
 </CHANGE_SUMMARY>
 */
 
-import type { PluginHookContext, HookResult } from "@warpgogol/werkstatt-engine/plugin";
+import type { PluginHookContext, HookResult } from "@warpgogol/werkstatt-shared/plugin";
 import { validateAssets } from "./assets-validate.ts";
 import { validateScenes } from "./scenes-validate.ts";
 import { validateBundle } from "./bundle-validate.ts";

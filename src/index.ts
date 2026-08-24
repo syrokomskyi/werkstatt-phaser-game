@@ -20,7 +20,7 @@
 </CHANGE_SUMMARY>
 */
 
-import type { WerkstattPlugin } from "@warpgogol/werkstatt-engine/plugin";
+import type { WerkstattPlugin } from "@warpgogol/werkstatt-shared/plugin";
 import type { KernelModule } from "@warpgogol/werkstatt-engine/kernel/types";
 import { phaserPathConventions } from "./paths/phaser-paths.ts";
 import { PHASER_INVARIANTS } from "./invariants/phaser-invariants.ts";
