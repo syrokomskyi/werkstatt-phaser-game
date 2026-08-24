@@ -24,8 +24,8 @@
 
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { writeFileIfChanged } from "@warpgogol/werkstatt/kernel";
-import type { PluginHookContext, HookResult } from "@warpgogol/werkstatt/plugin";
+import { writeFileIfChanged } from "@warpgogol/werkstatt-engine/kernel";
+import type { PluginHookContext, HookResult } from "@warpgogol/werkstatt-engine/plugin";
 
 const SCENE_KEYS_TS = `export const SCENE_KEYS = {
   Boot: "BootScene",

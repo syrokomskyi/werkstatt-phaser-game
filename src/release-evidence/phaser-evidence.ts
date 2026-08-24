@@ -16,15 +16,15 @@
 <CHANGE_SUMMARY>
   <item>Initial release evidence hook — bundle hash, asset manifest hash, scene registry hash.</item>
   <item>Migration from werkstatt-game: renamed from game to phaser.</item>
-  <item>DNA-53: replace node:crypto createHash with byteHashFile/byteHash from @warpgogol/werkstatt/fingerprint.</item>
+  <item>DNA-53: replace node:crypto createHash with byteHashFile/byteHash from @warpgogol/werkstatt-engine/fingerprint.</item>
 </CHANGE_SUMMARY>
 */
 
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
-import { byteHash, byteHashFile } from "@warpgogol/werkstatt/fingerprint";
+import { byteHash, byteHashFile } from "@warpgogol/werkstatt-engine/fingerprint";
 import type { Dirent } from "node:fs";
-import type { PluginHookContext, HookResult } from "@warpgogol/werkstatt/plugin";
+import type { PluginHookContext, HookResult } from "@warpgogol/werkstatt-engine/plugin";
 
 export interface PhaserReleaseEvidence {
   bundleHash: string;

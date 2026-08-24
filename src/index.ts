@@ -9,7 +9,7 @@
   <item>Declares Phaser path conventions via StackPathConventions.</item>
 </responsibilities>
 <non-goals>
-  <item>Do not implement engine logic — delegate to @warpgogol/werkstatt.</item>
+  <item>Do not implement engine logic — delegate to @warpgogol/werkstatt-engine.</item>
   <item>Do not import stack-specific dependencies into the engine package.</item>
   <item>Do not depend on Phaser directly — validate project structure only.</item>
 </non-goals>
@@ -20,8 +20,8 @@
 </CHANGE_SUMMARY>
 */
 
-import type { WerkstattPlugin } from "@warpgogol/werkstatt/plugin";
-import type { KernelModule } from "@warpgogol/werkstatt/kernel/types";
+import type { WerkstattPlugin } from "@warpgogol/werkstatt-engine/plugin";
+import type { KernelModule } from "@warpgogol/werkstatt-engine/kernel/types";
 import { phaserPathConventions } from "./paths/phaser-paths.ts";
 import { PHASER_INVARIANTS } from "./invariants/phaser-invariants.ts";
 

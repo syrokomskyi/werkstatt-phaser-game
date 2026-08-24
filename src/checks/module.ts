@@ -11,7 +11,7 @@
 </CHANGE_SUMMARY>
 */
 
-import type { KernelModule } from "@warpgogol/werkstatt/kernel/types";
+import type { KernelModule } from "@warpgogol/werkstatt-engine/kernel/types";
 import { createAssetsValidateCommand } from "./assets-validate.ts";
 import { createScenesValidateCommand } from "./scenes-validate.ts";
 import { createBundleValidateCommand } from "./bundle-validate.ts";

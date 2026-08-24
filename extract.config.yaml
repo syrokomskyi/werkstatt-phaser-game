@@ -13,7 +13,7 @@ stripScopes:
   - "@warpgogol/"
 preservePackages:
   - "@warpgogol/werkstatt-phaser-game"
-  - "@warpgogol/werkstatt"
+  - "@warpgogol/werkstatt-engine"
 packageManager: "pnpm"
 
 ci:

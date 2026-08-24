@@ -11,7 +11,7 @@
 </CHANGE_SUMMARY>
 */
 
-import type { StackInvariant } from "@warpgogol/werkstatt/plugin";
+import type { StackInvariant } from "@warpgogol/werkstatt-engine/plugin";
 
 export const PHASER_INVARIANTS: StackInvariant[] = [
   {

@@ -11,7 +11,7 @@
 </CHANGE_SUMMARY>
 */
 
-import type { StackPathConventions } from "@warpgogol/werkstatt/plugin";
+import type { StackPathConventions } from "@warpgogol/werkstatt-engine/plugin";
 
 export const phaserPathConventions: StackPathConventions = {
   contentDir: "src",
