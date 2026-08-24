@@ -1,6 +1,6 @@
 {
   "name": "@warpgogol/werkstatt-phaser-game",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "private": false,
   "type": "module",
   "engines": {
@@ -62,15 +62,15 @@
     "access": "public"
   },
   "dependencies": {
-    "@warpgogol/werkstatt-engine": "*",
-    "yaml": "^2.9.0",
-    "@warpgogol/werkstatt-shared": "*"
+    "@warpgogol/werkstatt-engine": "workspace:*",
+    "@warpgogol/werkstatt-shared": "workspace:*",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "eslint": "^10.8.0",
+    "@types/node": "^26.2.0",
+    "eslint": "^10.9.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "8.65.0",
-    "vitest": "^4.1.10"
+    "typescript-eslint": "8.68.0",
+    "vitest": "^4.1.11"
   }
 }
