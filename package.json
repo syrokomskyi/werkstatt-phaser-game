@@ -65,7 +65,7 @@
   "dependencies": {
     "@warpgogol/werkstatt-engine": "*",
     "yaml": "^2.9.0",
-    "@warpgogol/werkstatt-shared": "^0.11.0"
+    "@warpgogol/werkstatt-shared": "*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
