@@ -133,6 +133,8 @@ async function listAssetFiles(dir: string): Promise<string[]> {
 export function createAssetsValidateCommand(): KernelCommandDefinition<AssetsValidateData> {
   return {
     name: "phaser.assets.validate",
+    contract: "phaser",
+    rules: [],
     description: "Validate asset manifest completeness (PHASER-02)",
     scope: "workspace",
     cacheable: false,

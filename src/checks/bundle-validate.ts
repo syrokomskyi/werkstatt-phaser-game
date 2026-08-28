@@ -134,6 +134,8 @@ function formatMB(bytes: number): string {
 export function createBundleValidateCommand(): KernelCommandDefinition<BundleValidateData> {
   return {
     name: "phaser.bundle.validate",
+    contract: "phaser",
+    rules: [],
     description: "Validate bundle size against budget (PHASER-03)",
     scope: "workspace",
     cacheable: false,

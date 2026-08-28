@@ -125,6 +125,8 @@ function extractRegisteredScenes(configContent: string): Set<string> {
 export function createScenesValidateCommand(): KernelCommandDefinition<ScenesValidateData> {
   return {
     name: "phaser.scenes.validate",
+    contract: "phaser",
+    rules: [],
     description: "Validate scene registry consistency (PHASER-01)",
     scope: "workspace",
     cacheable: false,

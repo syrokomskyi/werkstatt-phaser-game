@@ -232,6 +232,8 @@ async function listJsFiles(dir: string): Promise<string[]> {
 export function createTypeScriptValidateCommand(): KernelCommandDefinition<TypeScriptValidateData> {
   return {
     name: "phaser.typescript.validate",
+    contract: "phaser",
+    rules: [],
     description: "Validate TypeScript-first best practices (PHASER-05)",
     scope: "workspace",
     cacheable: false,
