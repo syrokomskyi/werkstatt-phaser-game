@@ -4,6 +4,8 @@
 
 Плагін Werkstatt для стека Phaser 3 + Vite + Turborepo. Реалізує контракт `werkstatt/plugin@1`: валідатори сцен і ассетів, перевірка розміру бандла, сканер секретів, хук збірки через Vite, адаптери деплою на GitHub Pages та Cloudflare Pages, хук скаффолда проєкту та генерація release evidence.
 
+> Розроблено в [Warpgogol](https://warpgogol.com) · Опубліковано як open source.
+
 ---
 
 ## Що робить цей пакет
@@ -73,25 +75,25 @@ pnpm add -D @warpgogol/werkstatt @warpgogol/werkstatt-phaser-game
 
 ## Хуки
 
-| Хук | Що робить |
-| --- | --- |
-| `build` | Запускає `npx vite build` для створення бандла гри |
-| `checkGate` | Запускає всі 4 валідатори послідовно |
-| `releaseEvidence` | Генерує SHA-256 хеші для перевірки цілісності релізу |
+| Хук               | Що робить                                                            |
+| ----------------- | -------------------------------------------------------------------- |
+| `build`           | Запускає `npx vite build` для створення бандла гри                   |
+| `checkGate`       | Запускає всі 4 валідатори послідовно                                 |
+| `releaseEvidence` | Генерує SHA-256 хеші для перевірки цілісності релізу                 |
 | `scaffoldProject` | Генерує бойлерплейт Phaser-проєкту (сцени, конфіг, маніфест ассетів) |
 
 ---
 
 ## Конвенції шляхів
 
-| Шлях | Значення |
-| --- | --- |
-| Директорія контенту | `src` |
-| Директорія дистрибуції | `dist` |
-| Точки входу | `phaser.config.ts`, `src/main.ts` |
-| Директорія сцен | `src/scenes` |
-| Директорія ассетів | `src/assets` |
-| Маніфест ассетів | `src/assets/manifest.yaml` |
+| Шлях                   | Значення                          |
+| ---------------------- | --------------------------------- |
+| Директорія контенту    | `src`                             |
+| Директорія дистрибуції | `dist`                            |
+| Точки входу            | `phaser.config.ts`, `src/main.ts` |
+| Директорія сцен        | `src/scenes`                      |
+| Директорія ассетів     | `src/assets`                      |
+| Маніфест ассетів       | `src/assets/manifest.yaml`        |
 
 ---
 
@@ -123,16 +125,16 @@ engine.registerPlugin(werkstattPhaserPlugin);
 
 ## Архітектура
 
-| Директорія | Призначення |
-| --- | --- |
-| `src/index.ts` | Точка входу плагіна — експортує `werkstattPhaserPlugin` |
-| `src/paths/` | Конвенції шляхів Phaser (`src`, `dist`, точки входу) |
-| `src/invariants/` | Декларації інваріантів PHASER-01..04 |
-| `src/checks/` | 4 валідатори + runner check gate + kernel-модуль |
-| `src/build/` | Хук збірки Vite |
-| `src/deploy/` | Адаптери деплою GitHub Pages та Cloudflare Pages |
-| `src/onboarding/` | Хук скаффолда проєкту (генерація бойлерплейту) |
-| `src/release-evidence/` | Хук release evidence (SHA-256 хеші) |
+| Директорія              | Призначення                                             |
+| ----------------------- | ------------------------------------------------------- |
+| `src/index.ts`          | Точка входу плагіна — експортує `werkstattPhaserPlugin` |
+| `src/paths/`            | Конвенції шляхів Phaser (`src`, `dist`, точки входу)    |
+| `src/invariants/`       | Декларації інваріантів PHASER-01..04                    |
+| `src/checks/`           | 4 валідатори + runner check gate + kernel-модуль        |
+| `src/build/`            | Хук збірки Vite                                         |
+| `src/deploy/`           | Адаптери деплою GitHub Pages та Cloudflare Pages        |
+| `src/onboarding/`       | Хук скаффолда проєкту (генерація бойлерплейту)          |
+| `src/release-evidence/` | Хук release evidence (SHA-256 хеші)                     |
 
 ---
 
@@ -166,3 +168,11 @@ pnpm exec repo-extract --config packages/werkstatt-phaser-game/extract.config.ya
 ## Ліцензія
 
 Apache-2.0
+
+## Відкрита інженерія
+
+Цей пакет походить із виробничої інженерної роботи в [Warpgogol](https://warpgogol.com), інженерній студії в Німеччині.
+
+Ми публікуємо багаторазові частини нашої інфраструктури, коли вони можуть бути корисними поза нашими власними проєктами. Він публікується незалежно від будь-якого комерційного сервісу Warpgogol. Використання цього пакету не створює жодної залежності від Warpgogol.
+
+Створено для реальних систем. Поширюється відкрито.

@@ -4,6 +4,8 @@
 
 Werkstatt plugin for the Phaser 3 + Vite + Turborepo stack. Implements the `werkstatt/plugin@1` contract: scene and asset validators, bundle size check, secret scanner, Vite build hook, deploy adapters for GitHub Pages and Cloudflare Pages, project scaffold hook, and release evidence generation.
 
+> Engineered at [Warpgogol](https://warpgogol.com) · Released as open source.
+
 ---
 
 ## What this package does
@@ -73,25 +75,25 @@ Credentials are read from the system registry, not from environment variables.
 
 ## Hooks
 
-| Hook | What it does |
-| --- | --- |
-| `build` | Runs `npx vite build` to produce the game bundle |
-| `checkGate` | Runs all 4 validators sequentially |
-| `releaseEvidence` | Generates SHA-256 hashes for release integrity verification |
+| Hook              | What it does                                                           |
+| ----------------- | ---------------------------------------------------------------------- |
+| `build`           | Runs `npx vite build` to produce the game bundle                       |
+| `checkGate`       | Runs all 4 validators sequentially                                     |
+| `releaseEvidence` | Generates SHA-256 hashes for release integrity verification            |
 | `scaffoldProject` | Generates Phaser project boilerplate (scenes, config, assets manifest) |
 
 ---
 
 ## Path conventions
 
-| Path | Value |
-| --- | --- |
-| Content directory | `src` |
-| Distribution directory | `dist` |
-| Entry points | `phaser.config.ts`, `src/main.ts` |
-| Scenes directory | `src/scenes` |
-| Assets directory | `src/assets` |
-| Asset manifest | `src/assets/manifest.yaml` |
+| Path                   | Value                             |
+| ---------------------- | --------------------------------- |
+| Content directory      | `src`                             |
+| Distribution directory | `dist`                            |
+| Entry points           | `phaser.config.ts`, `src/main.ts` |
+| Scenes directory       | `src/scenes`                      |
+| Assets directory       | `src/assets`                      |
+| Asset manifest         | `src/assets/manifest.yaml`        |
 
 ---
 
@@ -123,16 +125,16 @@ The plugin exports a single `WerkstattPlugin` object with `profileId: "phaser-tu
 
 ## Architecture
 
-| Directory | Purpose |
-| --- | --- |
-| `src/index.ts` | Plugin entry point — exports `werkstattPhaserPlugin` |
-| `src/paths/` | Phaser path conventions (`src`, `dist`, entry points) |
-| `src/invariants/` | PHASER-01..04 invariant declarations |
-| `src/checks/` | 4 validators + check gate runner + kernel module |
-| `src/build/` | Vite build hook |
-| `src/deploy/` | GitHub Pages and Cloudflare Pages deploy adapters |
-| `src/onboarding/` | Project scaffold hook (boilerplate generation) |
-| `src/release-evidence/` | Release evidence hook (SHA-256 hashes) |
+| Directory               | Purpose                                               |
+| ----------------------- | ----------------------------------------------------- |
+| `src/index.ts`          | Plugin entry point — exports `werkstattPhaserPlugin`  |
+| `src/paths/`            | Phaser path conventions (`src`, `dist`, entry points) |
+| `src/invariants/`       | PHASER-01..04 invariant declarations                  |
+| `src/checks/`           | 4 validators + check gate runner + kernel module      |
+| `src/build/`            | Vite build hook                                       |
+| `src/deploy/`           | GitHub Pages and Cloudflare Pages deploy adapters     |
+| `src/onboarding/`       | Project scaffold hook (boilerplate generation)        |
+| `src/release-evidence/` | Release evidence hook (SHA-256 hashes)                |
 
 ---
 
@@ -166,3 +168,11 @@ After CI completes, verify the new version on [npmjs.com/package/@warpgogol/werk
 ## License
 
 Apache-2.0
+
+## Open Engineering
+
+This package originated from production engineering work at [Warpgogol](https://warpgogol.com), an engineering studio in Germany.
+
+We publish reusable parts of our infrastructure when they can be useful beyond our own projects. It is published independently of any Warpgogol commercial service. Using this package does not create any dependency on Warpgogol.
+
+Built for real systems. Shared openly.
