@@ -6,7 +6,6 @@ forgePlugin: false
 projectDir: packages/werkstatt-phaser-game
 destName: werkstatt-phaser-game
 standalone: true
-versionBump: minor
 
 workspacePrefixes:
   - "@warpgogol/"
