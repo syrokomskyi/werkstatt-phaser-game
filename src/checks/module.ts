@@ -11,23 +11,27 @@
 </CHANGE_SUMMARY>
 */
 
-import type { KernelModule } from "@warpgogol/werkstatt-engine/kernel/types";
+
 import { createAssetsValidateCommand } from "./assets-validate.ts";
 import { createScenesValidateCommand } from "./scenes-validate.ts";
 import { createBundleValidateCommand } from "./bundle-validate.ts";
 import { createSecretScanCommand } from "./secret-scan.ts";
 import { createTypeScriptValidateCommand } from "./typescript-validate.ts";
+import type { ModuleExport } from "@warpgogol/werkstatt-engine/runtime/desired-state";
 
-export function createPhaserCheckModule(): KernelModule {
+export function createPhaserCheckModule(): ModuleExport {
   return {
     name: "phaser-checks",
     version: "0.1.0",
-    register(registry) {
-      registry.registerCommand(createAssetsValidateCommand());
-      registry.registerCommand(createScenesValidateCommand());
-      registry.registerCommand(createBundleValidateCommand());
-      registry.registerCommand(createSecretScanCommand());
-      registry.registerCommand(createTypeScriptValidateCommand());
-    },
-  };
+      declarations: [],
+  commands: [
+      createAssetsValidateCommand(),
+      createScenesValidateCommand(),
+      createBundleValidateCommand(),
+      createSecretScanCommand(),
+      createTypeScriptValidateCommand(),
+    ],
+  pipelines: [
+
+  ]};
 }
