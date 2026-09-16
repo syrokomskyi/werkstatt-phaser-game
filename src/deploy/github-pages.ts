@@ -9,6 +9,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>RFC-1100: subprocess calls moved to shared runTool seam with injectable ToolExecutor; dist/ preflight via requireDist; no direct node:child_process import.</item>
   <item>RFC-1097: step 6 — compass.migrate codemod run
 
 Mechanical v1 to v2 header migration across the workspace: 942 files rewritten — CHANGE_SUMMARY windows collapsed into history, forbidden v1 blocks stripped, KEY_DECISIONS seeded from @ai-invariant comments (5 files) or TODO placeholders (103 files), blocks reordered to canonical order.</item>
@@ -18,12 +19,12 @@ Sweep batch 3: rewrote ~95 purposes across werkstatt-knowledge, werkstatt-shared
   <item>RFC-1097: sweep — werkstatt-engine clean
 
 Sweep batch 4: 73 Compass headers on headerless engine files (certification, component-runtime, isolation, evolution, testing), real KEY_DECISIONS on 75 files (kernel, cache, dht, swim, gitmesh, runtime), ~80 purpose expansions (CONTRACT-02/PURPOSE-02), non-goals on 13 CONTRACT-03 files, CS-07 history literal fix repo-wide (253 files). Policy: .template.ts/.template.astro excludedPaths. werkstatt-engine now 0 diagnostics.</item>
+  <item>RFC-1100: steps 3-6 — spec-driven checks, shared seams, scaffold table</item>
 </CHANGE_SUMMARY>
 */
 
-import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { runTool } from "@warpgogol/werkstatt-shared/share/run-tool";
+import type { ToolExecutor } from "@warpgogol/werkstatt-shared/share/run-tool";
 import type { DeployResult } from "./types.ts";
 
 export interface GitHubPagesDeployConfig {
@@ -36,17 +37,9 @@ export interface GitHubPagesAdapter {
   deploy(workpiecePath: string, config: GitHubPagesDeployConfig): DeployResult;
 }
 
-export function createGitHubPagesAdapter(): GitHubPagesAdapter {
+export function createGitHubPagesAdapter(executor?: ToolExecutor): GitHubPagesAdapter {
   return {
     deploy(workpiecePath: string, config: GitHubPagesDeployConfig): DeployResult {
-      const distDir = join(workpiecePath, "dist");
-      if (!existsSync(distDir)) {
-        return {
-          success: false,
-          errors: [`dist/ directory not found at ${distDir} — run build first`],
-        };
-      }
-
       if (!config.token) {
         return {
           success: false,
@@ -54,49 +47,53 @@ export function createGitHubPagesAdapter(): GitHubPagesAdapter {
         };
       }
 
-      try {
-        const args = ["gh-pages", "-d", "dist"];
-        if (config.branch) {
-          args.push("-b", config.branch);
-        }
+      const env: Record<string, string> = { GH_TOKEN: config.token };
 
-        const env: Record<string, string> = {
-          ...process.env,
-          GH_TOKEN: config.token,
-        };
-
-        if (config.repo) {
-          args.push("-r", `https://x-access-token:${config.token}@github.com/${config.repo}.git`);
-        }
-
-        execFileSync("npx", ["gh-pages-clean"], {
+      const clean = runTool(
+        {
+          bin: "npx",
+          args: ["gh-pages-clean"],
           cwd: workpiecePath,
-          encoding: "utf-8",
-          timeout: 30_000,
-          stdio: ["pipe", "pipe", "pipe"],
           env,
-        });
-
-        execFileSync("npx", args, {
-          cwd: workpiecePath,
-          encoding: "utf-8",
-          timeout: 120_000,
-          stdio: ["pipe", "pipe", "pipe"],
-          env,
-        });
-
-        const url = config.repo
-          ? `https://${config.repo.split("/")[0]}.github.io/${config.repo.split("/")[1]}`
-          : undefined;
-
-        return { success: true, url };
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+          timeoutMs: 30_000,
+          requireDist: true,
+        },
+        executor,
+      );
+      if (!clean.success) {
         return {
           success: false,
-          errors: [`GitHub Pages deploy failed: ${message}`],
+          errors:
+            clean.failedAt === "exec"
+              ? [`GitHub Pages deploy failed: ${clean.errors?.join("; ")}`]
+              : clean.errors,
         };
       }
+
+      const args = ["gh-pages", "-d", "dist"];
+      if (config.branch) {
+        args.push("-b", config.branch);
+      }
+      if (config.repo) {
+        args.push("-r", `https://x-access-token:${config.token}@github.com/${config.repo}.git`);
+      }
+
+      const result = runTool(
+        { bin: "npx", args, cwd: workpiecePath, env, timeoutMs: 120_000 },
+        executor,
+      );
+      if (!result.success) {
+        return {
+          success: false,
+          errors: [`GitHub Pages deploy failed: ${result.errors?.join("; ")}`],
+        };
+      }
+
+      const url = config.repo
+        ? `https://${config.repo.split("/")[0]}.github.io/${config.repo.split("/")[1]}`
+        : undefined;
+
+      return { success: true, url };
     },
   };
 }

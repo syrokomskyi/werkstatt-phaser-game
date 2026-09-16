@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { validateScenes } from "../scenes-validate.ts";
+import { checkScenes } from "../scenes-validate.ts";
 
 describe("phaser.scenes.validate", () => {
   let projectRoot: string;
@@ -30,10 +30,9 @@ describe("phaser.scenes.validate", () => {
 };`,
     );
 
-    const result = await validateScenes(projectRoot);
+    const violations = await checkScenes(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.status).toBe("pass");
+    expect(violations).toHaveLength(0);
   });
 
   it("fails when a scene is not registered (PHASER-01)", async () => {
@@ -49,13 +48,9 @@ describe("phaser.scenes.validate", () => {
 };`,
     );
 
-    const result = await validateScenes(projectRoot);
+    const violations = await checkScenes(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    expect(result.data?.status).toBe("fail");
-    const unregistered = result.data?.violations.find(
-      (v) => v.file === "src/scenes/level01.ts",
-    );
+    const unregistered = violations.find((v) => v.file === "src/scenes/level01.ts");
     expect(unregistered).toBeDefined();
     expect(unregistered?.ruleId).toBe("PHASER-01");
   });
@@ -67,13 +62,11 @@ describe("phaser.scenes.validate", () => {
       `export default { scenes: [] };`,
     );
 
-    const result = await validateScenes(projectRoot);
+    const violations = await checkScenes(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    expect(result.data?.status).toBe("fail");
-    expect(result.data?.violations).toHaveLength(1);
-    expect(result.data?.violations[0]!.ruleId).toBe("PHASER-01");
-    expect(result.data?.violations[0]!.message).toContain("No scenes found");
+    expect(violations).toHaveLength(1);
+    expect(violations[0]!.ruleId).toBe("PHASER-01");
+    expect(violations[0]!.message).toContain("No scenes found");
   });
 
   it("passes with a single boot scene (empty-state)", async () => {
@@ -86,9 +79,8 @@ describe("phaser.scenes.validate", () => {
 };`,
     );
 
-    const result = await validateScenes(projectRoot);
+    const violations = await checkScenes(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.status).toBe("pass");
+    expect(violations).toHaveLength(0);
   });
 });

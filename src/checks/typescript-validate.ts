@@ -6,10 +6,11 @@
 <non-goals>
   <item>Does not modify files — read-only validator.</item>
   <item>Does not run tsc — regex-based source scanning only.</item>
-  <item>Does not check phaser.config.ts outside project root.</item>
+  <item>Does not check the game config file outside project root.</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>RFC-1100: rewritten as pure checkTypeScript() on shared seams — walkFiles/readTextFiles for source discovery, readPhaserConfig model for the GameConfig type check; command envelope moved to PHASER_CHECKS spec.</item>
   <item>RFC-1097: step 6 — compass.migrate codemod run
 
 Mechanical v1 to v2 header migration across the workspace: 942 files rewritten — CHANGE_SUMMARY windows collapsed into history, forbidden v1 blocks stripped, KEY_DECISIONS seeded from @ai-invariant comments (5 files) or TODO placeholders (103 files), blocks reordered to canonical order.</item>
@@ -19,43 +20,29 @@ Sweep batch 3: rewrote ~95 purposes across werkstatt-knowledge, werkstatt-shared
   <item>RFC-1097: sweep — werkstatt-engine clean
 
 Sweep batch 4: 73 Compass headers on headerless engine files (certification, component-runtime, isolation, evolution, testing), real KEY_DECISIONS on 75 files (kernel, cache, dht, swim, gitmesh, runtime), ~80 purpose expansions (CONTRACT-02/PURPOSE-02), non-goals on 13 CONTRACT-03 files, CS-07 history literal fix repo-wide (253 files). Policy: .template.ts/.template.astro excludedPaths. werkstatt-engine now 0 diagnostics.</item>
+  <item>RFC-1100: steps 3-6 — spec-driven checks, shared seams, scaffold table</item>
 </CHANGE_SUMMARY>
 */
 
-import { readFile, readdir } from "node:fs/promises";
-import { join, relative } from "node:path";
-import type { Dirent } from "node:fs";
-import type {
-  KernelCommandDefinition,
-  KernelCommandResult,
-} from "@warpgogol/werkstatt-engine/kernel/types";
+import { join } from "node:path";
+import { readTextFiles, walkFiles } from "@warpgogol/werkstatt-shared/share/walk-files";
+import type { StackCheckViolation } from "@warpgogol/werkstatt-shared/share/stack-checks";
+import { readPhaserConfig } from "../config/phaser-config.ts";
+import { PHASER_PATHS } from "../paths/phaser-paths.ts";
 
-export interface TypeScriptValidateViolation {
-  ruleId: string;
-  file: string;
-  line: number;
-  message: string;
-}
+export async function checkTypeScript(projectRoot: string): Promise<StackCheckViolation[]> {
+  const violations: StackCheckViolation[] = [];
+  const srcDir = join(projectRoot, PHASER_PATHS.srcDir);
 
-export interface TypeScriptValidateData {
-  command: string;
-  status: "pass" | "fail";
-  violations: TypeScriptValidateViolation[];
-}
+  const srcFiles = await walkFiles(srcDir, {
+    filter: (rel) => rel.endsWith(".ts") && !rel.endsWith(".d.ts"),
+  });
+  const contents = await readTextFiles(srcDir, srcFiles);
 
-const SRC_DIR = "src";
-const PHASER_CONFIG = "phaser.config.ts";
-
-export async function validateTypeScript(
-  projectRoot: string,
-): Promise<KernelCommandResult<TypeScriptValidateData>> {
-  const violations: TypeScriptValidateViolation[] = [];
-  const srcPath = join(projectRoot, SRC_DIR);
-
-  const srcFiles = await listSourceFiles(srcPath);
-  for (const filePath of srcFiles) {
-    const relFile = relative(projectRoot, filePath);
-    const content = await readFile(filePath, "utf-8");
+  for (const relPath of srcFiles) {
+    const content = contents.get(relPath);
+    if (content === undefined) continue;
+    const relFile = `${PHASER_PATHS.srcDir}/${relPath}`;
     const lines = content.split("\n");
 
     for (let i = 0; i < lines.length; i++) {
@@ -74,25 +61,29 @@ export async function validateTypeScript(
     }
   }
 
-  const jsFiles = await listJsFiles(srcPath);
-  for (const filePath of jsFiles) {
-    const relFile = relative(projectRoot, filePath);
+  const jsFiles = await walkFiles(srcDir, {
+    filter: (rel) => rel.endsWith(".js"),
+  });
+  for (const relPath of jsFiles) {
     violations.push({
       ruleId: "PHASER-05",
-      file: relFile,
+      file: `${PHASER_PATHS.srcDir}/${relPath}`,
       line: 1,
       message: "JavaScript file detected — use .ts extension only (TS-01)",
     });
   }
 
-  await checkConfigInterface(projectRoot, violations);
+  const model = await readPhaserConfig(projectRoot);
+  if (model.raw !== "" && !model.usesGameConfigType) {
+    violations.push({
+      ruleId: "PHASER-05",
+      file: PHASER_PATHS.phaserConfig,
+      line: 1,
+      message: "Custom game config interface — use Phaser.Types.Core.GameConfig (TS-04)",
+    });
+  }
 
-  const status = violations.length === 0 ? "pass" : "fail";
-  return {
-    data: { command: "phaser.typescript.validate", status, violations },
-    exitCode: status === "pass" ? 0 : 1,
-    summary: `phaser.typescript.validate: ${status} (${violations.length} violations)`,
-  };
+  return violations;
 }
 
 function isComment(trimmed: string): boolean {
@@ -103,7 +94,7 @@ function checkAnyType(
   line: string,
   file: string,
   lineNum: number,
-  violations: TypeScriptValidateViolation[],
+  violations: StackCheckViolation[],
 ): void {
   if (/\b:\s*any\b/.test(line) || /\bas\s+any\b/.test(line)) {
     violations.push({
@@ -119,7 +110,7 @@ function checkTsSuppression(
   line: string,
   file: string,
   lineNum: number,
-  violations: TypeScriptValidateViolation[],
+  violations: StackCheckViolation[],
 ): void {
   if (/@ts-ignore|@ts-nocheck|@ts-expect-error/.test(line)) {
     violations.push({
@@ -135,7 +126,7 @@ function checkHardcodedSceneKey(
   line: string,
   file: string,
   lineNum: number,
-  violations: TypeScriptValidateViolation[],
+  violations: StackCheckViolation[],
 ): void {
   const hardcodedKeyRegex = /super\s*\(\s*\{\s*key\s*:\s*["']/;
   if (hardcodedKeyRegex.test(line) && !line.includes("SCENE_KEYS")) {
@@ -153,7 +144,7 @@ function checkMissingPhaserImport(
   fullContent: string,
   file: string,
   lineNum: number,
-  violations: TypeScriptValidateViolation[],
+  violations: StackCheckViolation[],
 ): void {
   if (!line.includes("Phaser.")) return;
 
@@ -168,78 +159,4 @@ function checkMissingPhaserImport(
       message: "Missing Phaser import — add 'import Phaser from \"phaser\"' (TS-06)",
     });
   }
-}
-
-async function checkConfigInterface(
-  projectRoot: string,
-  violations: TypeScriptValidateViolation[],
-): Promise<void> {
-  const configPath = join(projectRoot, PHASER_CONFIG);
-  let content: string;
-  try {
-    content = await readFile(configPath, "utf-8");
-  } catch {
-    return;
-  }
-
-  if (!content.includes("Phaser.Types.Core.GameConfig")) {
-    violations.push({
-      ruleId: "PHASER-05",
-      file: PHASER_CONFIG,
-      line: 1,
-      message: "Custom game config interface — use Phaser.Types.Core.GameConfig (TS-04)",
-    });
-  }
-}
-
-async function listSourceFiles(dir: string): Promise<string[]> {
-  const results: string[] = [];
-  let entries: Dirent[];
-  try {
-    entries = await readdir(dir, { withFileTypes: true });
-  } catch {
-    return results;
-  }
-  for (const entry of entries) {
-    const fullPath = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      results.push(...(await listSourceFiles(fullPath)));
-    } else if (entry.isFile() && entry.name.endsWith(".ts") && !entry.name.endsWith(".d.ts")) {
-      results.push(fullPath);
-    }
-  }
-  return results;
-}
-
-async function listJsFiles(dir: string): Promise<string[]> {
-  const results: string[] = [];
-  let entries: Dirent[];
-  try {
-    entries = await readdir(dir, { withFileTypes: true });
-  } catch {
-    return results;
-  }
-  for (const entry of entries) {
-    const fullPath = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      results.push(...(await listJsFiles(fullPath)));
-    } else if (entry.isFile() && entry.name.endsWith(".js") && !entry.name.endsWith(".d.ts")) {
-      results.push(fullPath);
-    }
-  }
-  return results;
-}
-
-export function createTypeScriptValidateCommand(): KernelCommandDefinition<TypeScriptValidateData> {
-  return {
-    name: "phaser.typescript.validate",
-    contract: "phaser",
-    rules: [],
-    description: "Validate TypeScript-first best practices (PHASER-05)",
-    scope: "workspace",
-    cacheable: false,
-    async execute(_input, context) {
-      return validateTypeScript(context.workspaceRoot);
-    },
-  };
 }

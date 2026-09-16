@@ -40,6 +40,26 @@ describe("scaffoldPhaserProject", () => {
     expect(files.filesCreated).toContain("vite.config.ts");
     expect(files.filesCreated).toContain("package.json");
     expect(files.filesCreated).toContain("tsconfig.json");
+    expect(files.filesCreated).toContain("src/main.ts");
+  });
+
+  it("reports filesCreated equal to the written set (AC-4)", async () => {
+    const result = await scaffoldPhaserProject(makeCtx(projectPath, "test-game"));
+
+    expect(result.success).toBe(true);
+    const data = result.data as { filesCreated: string[]; directoriesCreated: string[] };
+    for (const rel of data.filesCreated) {
+      await expect(access(join(projectPath, rel))).resolves.toBeUndefined();
+    }
+    expect(data.directoriesCreated).toContain("public");
+  });
+
+  it("uses default projectId when none is provided", async () => {
+    await scaffoldPhaserProject(makeCtx(projectPath));
+
+    const pkgContent = await readFile(join(projectPath, "package.json"), "utf-8");
+    const pkg = JSON.parse(pkgContent);
+    expect(pkg.name).toBe("my-phaser-game");
   });
 
   it("creates scene-keys.ts with SCENE_KEYS constant", async () => {

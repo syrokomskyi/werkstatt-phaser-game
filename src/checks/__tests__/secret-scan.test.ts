@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { scanSecrets } from "../secret-scan.ts";
+import { checkSecrets } from "../secret-scan.ts";
 
 describe("phaser.secret.scan", () => {
   let projectRoot: string;
@@ -22,11 +22,9 @@ describe("phaser.secret.scan", () => {
       `const config = { apiUrl: "https://api.example.com" };\nexport default config;\n`,
     );
 
-    const result = await scanSecrets(projectRoot);
+    const violations = await checkSecrets(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.status).toBe("pass");
-    expect(result.data?.violations).toHaveLength(0);
+    expect(violations).toHaveLength(0);
   });
 
   it("fails when hardcoded API key is found (PHASER-04)", async () => {
@@ -36,12 +34,10 @@ describe("phaser.secret.scan", () => {
       `const apiKey = "FAKE_TEST_KEY_1234567890abcdefghijklmnopqrstuvwx";\n`,
     );
 
-    const result = await scanSecrets(projectRoot);
+    const violations = await checkSecrets(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    expect(result.data?.status).toBe("fail");
-    expect(result.data?.violations).toHaveLength(1);
-    expect(result.data?.violations[0]!.ruleId).toBe("PHASER-04");
+    expect(violations).toHaveLength(1);
+    expect(violations[0]!.ruleId).toBe("PHASER-04");
   });
 
   it("fails when GitHub token pattern is found (PHASER-04)", async () => {
@@ -54,11 +50,9 @@ describe("phaser.secret.scan", () => {
       `const token = "${ghpPrefix}_${ghpBody}";\n`,
     );
 
-    const result = await scanSecrets(projectRoot);
+    const violations = await checkSecrets(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    expect(result.data?.status).toBe("fail");
-    expect(result.data?.violations[0]!.ruleId).toBe("PHASER-04");
+    expect(violations[0]!.ruleId).toBe("PHASER-04");
   });
 
   it("skips comment lines", async () => {
@@ -68,18 +62,16 @@ describe("phaser.secret.scan", () => {
       `// const apiKey = "FAKE_TEST_KEY_1234567890abcdefghijklmnopqrstuvwx";\nexport default {};\n`,
     );
 
-    const result = await scanSecrets(projectRoot);
+    const violations = await checkSecrets(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.status).toBe("pass");
+    expect(violations).toHaveLength(0);
   });
 
   it("passes with empty src/", async () => {
     await mkdir(join(projectRoot, "src"), { recursive: true });
 
-    const result = await scanSecrets(projectRoot);
+    const violations = await checkSecrets(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.status).toBe("pass");
+    expect(violations).toHaveLength(0);
   });
 });

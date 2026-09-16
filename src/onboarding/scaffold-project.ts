@@ -9,6 +9,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>RFC-1100: scaffold now renders from the centralized SCAFFOLD_FILES table — each entry declares path, render(ctx), and mkdirs; filesCreated is derived from the table so the reported list always equals the written set; package.json renders via parameterized object build (no string replace).</item>
   <item>RFC-0933: TypeScript-first scaffold — Phaser.Types.Core.GameConfig, SCENE_KEYS constants, typed lifecycle, no as-cast in main.ts.</item>
   <item>RFC-1097: step 6 — compass.migrate codemod run
 
@@ -16,6 +17,7 @@ Mechanical v1 to v2 header migration across the workspace: 942 files rewritten �
   <item>RFC-1097: sweep — werkstatt-engine clean
 
 Sweep batch 4: 73 Compass headers on headerless engine files (certification, component-runtime, isolation, evolution, testing), real KEY_DECISIONS on 75 files (kernel, cache, dht, swim, gitmesh, runtime), ~80 purpose expansions (CONTRACT-02/PURPOSE-02), non-goals on 13 CONTRACT-03 files, CS-07 history literal fix repo-wide (253 files). Policy: .template.ts/.template.astro excludedPaths. werkstatt-engine now 0 diagnostics.</item>
+  <item>RFC-1100: steps 3-6 — spec-driven checks, shared seams, scaffold table</item>
 </CHANGE_SUMMARY>
 */
 
@@ -69,25 +71,30 @@ const MANIFEST_YAML = `# Asset manifest — list all game assets here
 assets: []
 `;
 
-const PACKAGE_JSON = `{
-  "name": "my-phaser-game",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "phaser": "^3.90.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.5.0",
-    "vite": "^5.4.0"
-  }
+function renderPackageJson(projectId: string): string {
+  return `${JSON.stringify(
+    {
+      name: projectId,
+      version: "0.1.0",
+      private: true,
+      type: "module",
+      scripts: {
+        dev: "vite",
+        build: "vite build",
+        preview: "vite preview",
+      },
+      dependencies: {
+        phaser: "^3.90.0",
+      },
+      devDependencies: {
+        typescript: "^5.5.0",
+        vite: "^5.4.0",
+      },
+    },
+    null,
+    2,
+  )}\n`;
 }
-`;
 
 const TSCONFIG_JSON = `{
   "compilerOptions": {
@@ -126,44 +133,60 @@ const game = new Phaser.Game(config);
 export default game;
 `;
 
-export async function scaffoldPhaserProject(ctx: PluginHookContext): Promise<HookResult> {
+interface ScaffoldRenderContext {
+  projectId: string;
+}
+
+interface ScaffoldFileEntry {
+  /** Project-relative output path. */
+  path: string;
+  /** Content renderer — parameterized by the render context. */
+  render: (ctx: ScaffoldRenderContext) => string;
+  /** Directories to create before writing this file. */
+  mkdirs?: string[];
+}
+
+/** Directories with no files — created up front. */
+const SCAFFOLD_DIRS = ["public"] as const;
+
+const SCAFFOLD_FILES: ScaffoldFileEntry[] = [
+  { path: "src/scenes/scene-keys.ts", render: () => SCENE_KEYS_TS, mkdirs: ["src/scenes"] },
+  { path: "src/scenes/boot.ts", render: () => BOOT_SCENE_TS },
+  { path: "src/assets/manifest.yaml", render: () => MANIFEST_YAML, mkdirs: ["src/assets"] },
+  { path: "src/main.ts", render: () => MAIN_TS },
+  { path: "phaser.config.ts", render: () => PHASER_CONFIG_TS },
+  { path: "vite.config.ts", render: () => VITE_CONFIG_TS },
+  { path: "package.json", render: (ctx) => renderPackageJson(ctx.projectId) },
+  { path: "tsconfig.json", render: () => TSCONFIG_JSON },
+];
+
+export async function scaffoldPhaserProject(
+  ctx: PluginHookContext & { projectId?: string },
+): Promise<HookResult> {
   const projectPath = ctx.workpiecePath ?? ctx.workspaceRoot;
-  const projectId = (ctx as PluginHookContext & { projectId?: string }).projectId ?? "my-phaser-game";
+  const projectId = ctx.projectId ?? "my-phaser-game";
 
   ctx.logger.info(`scaffold-project: creating Phaser project at ${projectPath}`);
 
   try {
-    await mkdir(join(projectPath, "src", "scenes"), { recursive: true });
-    await mkdir(join(projectPath, "src", "assets"), { recursive: true });
-    await mkdir(join(projectPath, "public"), { recursive: true });
+    for (const dir of SCAFFOLD_DIRS) {
+      await mkdir(join(projectPath, dir), { recursive: true });
+    }
 
-    await writeFileIfChanged(join(projectPath, "src", "scenes", "scene-keys.ts"), SCENE_KEYS_TS);
-    await writeFileIfChanged(join(projectPath, "src", "scenes", "boot.ts"), BOOT_SCENE_TS);
-    await writeFileIfChanged(join(projectPath, "src", "assets", "manifest.yaml"), MANIFEST_YAML);
-    await writeFileIfChanged(join(projectPath, "src", "main.ts"), MAIN_TS);
-    await writeFileIfChanged(join(projectPath, "phaser.config.ts"), PHASER_CONFIG_TS);
-    await writeFileIfChanged(join(projectPath, "vite.config.ts"), VITE_CONFIG_TS);
-
-    const pkgJson = PACKAGE_JSON.replace('"my-phaser-game"', `"${projectId}"`);
-    await writeFileIfChanged(join(projectPath, "package.json"), pkgJson);
-
-    await writeFileIfChanged(join(projectPath, "tsconfig.json"), TSCONFIG_JSON);
+    for (const entry of SCAFFOLD_FILES) {
+      for (const dir of entry.mkdirs ?? []) {
+        await mkdir(join(projectPath, dir), { recursive: true });
+      }
+      await writeFileIfChanged(join(projectPath, entry.path), entry.render({ projectId }));
+    }
 
     ctx.logger.info("scaffold-project: project created successfully");
     return {
       success: true,
       data: {
         projectPath,
-        filesCreated: [
-          "src/scenes/scene-keys.ts",
-          "src/scenes/boot.ts",
-          "src/assets/manifest.yaml",
-          "src/main.ts",
-          "phaser.config.ts",
-          "vite.config.ts",
-          "package.json",
-          "tsconfig.json",
-        ],
+        filesCreated: SCAFFOLD_FILES.map((entry) => entry.path),
+        directoriesCreated: [...SCAFFOLD_DIRS],
       },
     };
   } catch (err) {

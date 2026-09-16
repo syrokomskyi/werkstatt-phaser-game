@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { validateTypeScript } from "../typescript-validate.ts";
+import { checkTypeScript } from "../typescript-validate.ts";
 
 describe("phaser.typescript.validate", () => {
   let projectRoot: string;
@@ -55,31 +55,24 @@ export default config;
 `,
     );
 
-    const result = await validateTypeScript(projectRoot);
+    const violations = await checkTypeScript(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.status).toBe("pass");
-    expect(result.data?.violations).toHaveLength(0);
+    expect(violations).toHaveLength(0);
   });
 
   it("passes when src/ directory does not exist (empty project)", async () => {
-    const result = await validateTypeScript(projectRoot);
+    const violations = await checkTypeScript(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.status).toBe("pass");
+    expect(violations).toHaveLength(0);
   });
 
   it("fails when a .js file exists in src/ (TS-01)", async () => {
     await mkdir(join(projectRoot, "src"), { recursive: true });
     await writeFile(join(projectRoot, "src", "game.js"), "console.log('hello');\n");
 
-    const result = await validateTypeScript(projectRoot);
+    const violations = await checkTypeScript(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    expect(result.data?.status).toBe("fail");
-    const jsViolation = result.data?.violations.find((v) =>
-      v.message.includes("TS-01"),
-    );
+    const jsViolation = violations.find((v) => v.message.includes("TS-01"));
     expect(jsViolation).toBeDefined();
     expect(jsViolation?.file).toBe("src/game.js");
   });
@@ -96,12 +89,9 @@ export class MyScene extends Phaser.Scene {
 `,
     );
 
-    const result = await validateTypeScript(projectRoot);
+    const violations = await checkTypeScript(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    const anyViolation = result.data?.violations.find((v) =>
-      v.message.includes("TS-02"),
-    );
+    const anyViolation = violations.find((v) => v.message.includes("TS-02"));
     expect(anyViolation).toBeDefined();
   });
 
@@ -115,12 +105,9 @@ const body = sprite.body as any;
 `,
     );
 
-    const result = await validateTypeScript(projectRoot);
+    const violations = await checkTypeScript(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    const anyViolation = result.data?.violations.find((v) =>
-      v.message.includes("TS-02"),
-    );
+    const anyViolation = violations.find((v) => v.message.includes("TS-02"));
     expect(anyViolation).toBeDefined();
   });
 
@@ -135,12 +122,9 @@ const x: number = "not a number";
 `,
     );
 
-    const result = await validateTypeScript(projectRoot);
+    const violations = await checkTypeScript(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    const tsViolation = result.data?.violations.find((v) =>
-      v.message.includes("TS-03"),
-    );
+    const tsViolation = violations.find((v) => v.message.includes("TS-03"));
     expect(tsViolation).toBeDefined();
   });
 
@@ -155,12 +139,9 @@ const x: number = "not a number";
 `,
     );
 
-    const result = await validateTypeScript(projectRoot);
+    const violations = await checkTypeScript(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    const tsViolation = result.data?.violations.find((v) =>
-      v.message.includes("TS-03"),
-    );
+    const tsViolation = violations.find((v) => v.message.includes("TS-03"));
     expect(tsViolation).toBeDefined();
   });
 
@@ -179,12 +160,9 @@ export default config;
 `,
     );
 
-    const result = await validateTypeScript(projectRoot);
+    const violations = await checkTypeScript(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    const configViolation = result.data?.violations.find((v) =>
-      v.message.includes("TS-04"),
-    );
+    const configViolation = violations.find((v) => v.message.includes("TS-04"));
     expect(configViolation).toBeDefined();
     expect(configViolation?.file).toBe("phaser.config.ts");
   });
@@ -203,12 +181,9 @@ export class BootScene extends Phaser.Scene {
 `,
     );
 
-    const result = await validateTypeScript(projectRoot);
+    const violations = await checkTypeScript(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    const keyViolation = result.data?.violations.find((v) =>
-      v.message.includes("TS-05"),
-    );
+    const keyViolation = violations.find((v) => v.message.includes("TS-05"));
     expect(keyViolation).toBeDefined();
   });
 
@@ -232,10 +207,9 @@ export class BootScene extends Phaser.Scene {
 `,
     );
 
-    const result = await validateTypeScript(projectRoot);
+    const violations = await checkTypeScript(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.status).toBe("pass");
+    expect(violations).toHaveLength(0);
   });
 
   it("fails when Phaser. is used without import (TS-06)", async () => {
@@ -248,12 +222,9 @@ export class BootScene extends Phaser.Scene {
 `,
     );
 
-    const result = await validateTypeScript(projectRoot);
+    const violations = await checkTypeScript(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    const importViolation = result.data?.violations.find((v) =>
-      v.message.includes("TS-06"),
-    );
+    const importViolation = violations.find((v) => v.message.includes("TS-06"));
     expect(importViolation).toBeDefined();
   });
 
@@ -268,9 +239,8 @@ export function init(): void {}
 `,
     );
 
-    const result = await validateTypeScript(projectRoot);
+    const violations = await checkTypeScript(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.status).toBe("pass");
+    expect(violations).toHaveLength(0);
   });
 });

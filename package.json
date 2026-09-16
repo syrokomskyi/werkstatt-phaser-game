@@ -47,9 +47,7 @@
       "default": "./src/release-evidence/phaser-evidence.ts"
     }
   },
-  "files": [
-    "src"
-  ],
+  "files": ["src"],
   "scripts": {
     "lint": "pnpm exec eslint \"src/**/*.ts\"",
     "typecheck": "pnpm exec tsc -p tsconfig.json --noEmit",
@@ -64,12 +62,12 @@
   "dependencies": {
     "@warpgogol/werkstatt-engine": "workspace:*",
     "@warpgogol/werkstatt-shared": "workspace:*",
+    "typescript": "^7.0.2",
     "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@types/node": "^26.5.1",
     "eslint": "^10.10.0",
-    "typescript": "^7.0.2",
     "typescript-eslint": "8.70.0",
     "vitest": "^5.0.0"
   }

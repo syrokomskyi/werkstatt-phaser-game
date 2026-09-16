@@ -8,6 +8,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>RFC-1100: rewritten as pure checkBundle() on shared seams — walkFiles/readBinaryFiles for dist measurement, readPhaserConfig model for bundleBudget; byte counts ride in violation details; command envelope moved to PHASER_CHECKS spec.</item>
   <item>RFC-1097: step 6 — compass.migrate codemod run
 
 Mechanical v1 to v2 header migration across the workspace: 942 files rewritten — CHANGE_SUMMARY windows collapsed into history, forbidden v1 blocks stripped, KEY_DECISIONS seeded from @ai-invariant comments (5 files) or TODO placeholders (103 files), blocks reordered to canonical order.</item>
@@ -17,137 +18,47 @@ Sweep batch 3: rewrote ~95 purposes across werkstatt-knowledge, werkstatt-shared
   <item>RFC-1097: sweep — werkstatt-engine clean
 
 Sweep batch 4: 73 Compass headers on headerless engine files (certification, component-runtime, isolation, evolution, testing), real KEY_DECISIONS on 75 files (kernel, cache, dht, swim, gitmesh, runtime), ~80 purpose expansions (CONTRACT-02/PURPOSE-02), non-goals on 13 CONTRACT-03 files, CS-07 history literal fix repo-wide (253 files). Policy: .template.ts/.template.astro excludedPaths. werkstatt-engine now 0 diagnostics.</item>
+  <item>RFC-1100: steps 3-6 — spec-driven checks, shared seams, scaffold table</item>
 </CHANGE_SUMMARY>
 */
 
-import { readFile, readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
-import type { Dirent } from "node:fs";
 import { gzipSync } from "node:zlib";
-import type {
-  KernelCommandDefinition,
-  KernelCommandResult,
-} from "@warpgogol/werkstatt-engine/kernel/types";
+import { readBinaryFiles, walkFiles } from "@warpgogol/werkstatt-shared/share/walk-files";
+import type { StackCheckViolation } from "@warpgogol/werkstatt-shared/share/stack-checks";
+import { readPhaserConfig } from "../config/phaser-config.ts";
+import { PHASER_PATHS } from "../paths/phaser-paths.ts";
 
-export interface BundleValidateViolation {
-  ruleId: string;
-  bundleBytes: number;
-  budgetBytes: number;
-  message: string;
-}
+export const DEFAULT_BUNDLE_BUDGET = 5 * 1024 * 1024;
 
-export interface BundleValidateData {
-  command: string;
-  status: "pass" | "fail";
-  bundleBytes: number;
-  budgetBytes: number;
-  violations: BundleValidateViolation[];
-}
+export async function checkBundle(projectRoot: string): Promise<StackCheckViolation[]> {
+  const model = await readPhaserConfig(projectRoot);
+  const budget = model.bundleBudget ?? DEFAULT_BUNDLE_BUDGET;
 
-const DIST_DIR = "dist";
-const PHASER_CONFIG = "phaser.config.ts";
-const DEFAULT_BUDGET = 5 * 1024 * 1024;
+  const distDir = join(projectRoot, PHASER_PATHS.distDir);
+  const files = await walkFiles(distDir);
+  const contents = await readBinaryFiles(distDir, files);
 
-export async function validateBundle(
-  projectRoot: string,
-): Promise<KernelCommandResult<BundleValidateData>> {
-  const budget = await readBundleBudget(projectRoot);
-  const distPath = join(projectRoot, DIST_DIR);
-  const bundleBytes = await measureGzippedSize(distPath);
+  let bundleBytes = 0;
+  for (const content of contents.values()) {
+    if (content.length === 0) continue;
+    bundleBytes += gzipSync(content).length;
+  }
 
-  const violations: BundleValidateViolation[] = [];
-  if (bundleBytes > budget) {
-    violations.push({
+  if (bundleBytes <= budget) {
+    return [];
+  }
+
+  return [
+    {
       ruleId: "PHASER-03",
-      bundleBytes,
-      budgetBytes: budget,
+      file: PHASER_PATHS.distDir,
       message: `Bundle exceeds budget: ${bundleBytes} bytes > ${budget} bytes (${formatMB(bundleBytes)} > ${formatMB(budget)} MB gzipped)`,
-    });
-  }
-
-  const status = violations.length === 0 ? "pass" : "fail";
-  return {
-    data: {
-      command: "phaser.bundle.validate",
-      status,
-      bundleBytes,
-      budgetBytes: budget,
-      violations,
+      details: { bundleBytes, budgetBytes: budget },
     },
-    exitCode: status === "pass" ? 0 : 1,
-    summary: `phaser.bundle.validate: ${status} (${formatMB(bundleBytes)} / ${formatMB(budget)} MB)`,
-  };
-}
-
-async function readBundleBudget(projectRoot: string): Promise<number> {
-  try {
-    const content = await readFile(join(projectRoot, PHASER_CONFIG), "utf-8");
-    const match = content.match(/bundleBudget\s*:\s*(\d+)/);
-    if (match) {
-      return parseInt(match[1]!, 10);
-    }
-  } catch {
-    // No phaser.config.ts → default budget
-  }
-  return DEFAULT_BUDGET;
-}
-
-async function measureGzippedSize(distPath: string): Promise<number> {
-  const files = await listFiles(distPath);
-  let totalGzipped = 0;
-  for (const filePath of files) {
-    try {
-      const content = await readFile(filePath);
-      const gzipped = gzipSync(content);
-      totalGzipped += gzipped.length;
-    } catch {
-      // Skip unreadable files
-    }
-  }
-  return totalGzipped;
-}
-
-async function listFiles(dir: string): Promise<string[]> {
-  const results: string[] = [];
-  let entries: Dirent[];
-  try {
-    entries = await readdir(dir, { withFileTypes: true });
-  } catch {
-    return results;
-  }
-  for (const entry of entries) {
-    const fullPath = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      const sub = await listFiles(fullPath);
-      results.push(...sub);
-    } else if (entry.isFile()) {
-      try {
-        const s = await stat(fullPath);
-        if (s.size > 0) {
-          results.push(fullPath);
-        }
-      } catch {
-        // Skip
-      }
-    }
-  }
-  return results;
+  ];
 }
 
 function formatMB(bytes: number): string {
   return (bytes / (1024 * 1024)).toFixed(2);
-}
-
-export function createBundleValidateCommand(): KernelCommandDefinition<BundleValidateData> {
-  return {
-    name: "phaser.bundle.validate",
-    contract: "phaser",
-    rules: [],
-    description: "Validate bundle size against budget (PHASER-03)",
-    scope: "workspace",
-    cacheable: false,
-    async execute(_input, context) {
-      return validateBundle(context.workspaceRoot);
-    },
-  };
 }

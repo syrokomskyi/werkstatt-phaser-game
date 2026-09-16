@@ -1,21 +1,31 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createCloudflarePagesAdapter } from "../cloudflare-pages.ts";
+import type {
+  ToolExecutor,
+  ToolResult,
+  ToolSpec,
+} from "@warpgogol/werkstatt-shared/share/run-tool";
 
-vi.mock("node:child_process", () => ({
-  execFileSync: vi.fn(() => "ok"),
-}));
-
-import { execFileSync } from "node:child_process";
+function recordingExecutor(
+  calls: ToolSpec[],
+  result: ToolResult = { success: true, stdout: "ok" },
+): ToolExecutor {
+  return (spec) => {
+    calls.push(spec);
+    return result;
+  };
+}
 
 describe("cloudflare-pages deploy adapter", () => {
   let workpiecePath: string;
+  let calls: ToolSpec[];
 
   beforeEach(async () => {
     workpiecePath = await mkdtemp(join(tmpdir(), "phaser-cf-pages-"));
-    vi.mocked(execFileSync).mockClear();
+    calls = [];
   });
 
   afterEach(async () => {
@@ -23,7 +33,7 @@ describe("cloudflare-pages deploy adapter", () => {
   });
 
   it("fails when dist/ does not exist", () => {
-    const adapter = createCloudflarePagesAdapter();
+    const adapter = createCloudflarePagesAdapter(recordingExecutor(calls));
     const result = adapter.deploy(workpiecePath, {
       apiToken: "cf_token",
       projectName: "my-game",
@@ -31,11 +41,12 @@ describe("cloudflare-pages deploy adapter", () => {
 
     expect(result.success).toBe(false);
     expect(result.errors?.[0]).toContain("dist/ directory not found");
+    expect(calls).toHaveLength(0);
   });
 
   it("fails when API token is not provided", async () => {
     await mkdir(join(workpiecePath, "dist"), { recursive: true });
-    const adapter = createCloudflarePagesAdapter();
+    const adapter = createCloudflarePagesAdapter(recordingExecutor(calls));
     const result = adapter.deploy(workpiecePath, {
       apiToken: "",
       projectName: "my-game",
@@ -47,7 +58,7 @@ describe("cloudflare-pages deploy adapter", () => {
 
   it("fails when project name is not provided", async () => {
     await mkdir(join(workpiecePath, "dist"), { recursive: true });
-    const adapter = createCloudflarePagesAdapter();
+    const adapter = createCloudflarePagesAdapter(recordingExecutor(calls));
     const result = adapter.deploy(workpiecePath, {
       apiToken: "cf_token",
       projectName: "",
@@ -59,7 +70,7 @@ describe("cloudflare-pages deploy adapter", () => {
 
   it("succeeds and calls wrangler pages deploy with correct args", async () => {
     await mkdir(join(workpiecePath, "dist"), { recursive: true });
-    const adapter = createCloudflarePagesAdapter();
+    const adapter = createCloudflarePagesAdapter(recordingExecutor(calls));
     const result = adapter.deploy(workpiecePath, {
       apiToken: "cf_token",
       projectName: "my-game",
@@ -68,33 +79,43 @@ describe("cloudflare-pages deploy adapter", () => {
 
     expect(result.success).toBe(true);
     expect(result.url).toBe("https://my-game.pages.dev");
-    expect(execFileSync).toHaveBeenCalled();
-    const lastCall = vi.mocked(execFileSync).mock.calls.at(-1);
-    expect(lastCall?.[0]).toBe("npx");
-    const args = lastCall?.[1] as string[];
-    expect(args).toContain("wrangler");
-    expect(args).toContain("pages");
-    expect(args).toContain("deploy");
-    expect(args).toContain("--project-name");
-    expect(args).toContain("my-game");
-    expect(args).toContain("--branch");
-    expect(args).toContain("main");
+    const last = calls.at(-1)!;
+    expect(last.bin).toBe("npx");
+    expect(last.args).toContain("wrangler");
+    expect(last.args).toContain("pages");
+    expect(last.args).toContain("deploy");
+    expect(last.args).toContain("--project-name");
+    expect(last.args).toContain("my-game");
+    expect(last.args).toContain("--branch");
+    expect(last.args).toContain("main");
   });
 
   it("passes credentials via env, not args", async () => {
     await mkdir(join(workpiecePath, "dist"), { recursive: true });
-    const adapter = createCloudflarePagesAdapter();
+    const adapter = createCloudflarePagesAdapter(recordingExecutor(calls));
     adapter.deploy(workpiecePath, {
       apiToken: "cf_secret_token",
       accountId: "cf_account_123",
       projectName: "my-game",
     });
 
-    const lastCall = vi.mocked(execFileSync).mock.calls.at(-1) as unknown as unknown[];
-    const options = lastCall[2] as { env: Record<string, string> } | undefined;
-    expect(options?.env.CLOUDFLARE_API_TOKEN).toBe("cf_secret_token");
-    expect(options?.env.CLOUDFLARE_ACCOUNT_ID).toBe("cf_account_123");
-    const args = lastCall[1] as string[];
-    expect(args.some((a: string) => a.includes("cf_secret_token"))).toBe(false);
+    const last = calls.at(-1)!;
+    expect(last.env?.CLOUDFLARE_API_TOKEN).toBe("cf_secret_token");
+    expect(last.env?.CLOUDFLARE_ACCOUNT_ID).toBe("cf_account_123");
+    expect(last.args.some((a) => a.includes("cf_secret_token"))).toBe(false);
+  });
+
+  it("maps executor failure to a deploy failure", async () => {
+    await mkdir(join(workpiecePath, "dist"), { recursive: true });
+    const adapter = createCloudflarePagesAdapter(
+      recordingExecutor(calls, { success: false, errors: ["exit 1"], failedAt: "exec" }),
+    );
+    const result = adapter.deploy(workpiecePath, {
+      apiToken: "cf_token",
+      projectName: "my-game",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.errors?.[0]).toContain("Cloudflare Pages deploy failed");
   });
 });

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { validateAssets } from "../assets-validate.ts";
+import { checkAssets } from "../assets-validate.ts";
 
 describe("phaser.assets.validate", () => {
   let projectRoot: string;
@@ -19,20 +19,17 @@ describe("phaser.assets.validate", () => {
     await mkdir(join(projectRoot, "src", "assets"), { recursive: true });
     await writeFile(join(projectRoot, "src", "assets", "manifest.yaml"), "assets: []\n");
 
-    const result = await validateAssets(projectRoot);
+    const violations = await checkAssets(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.status).toBe("pass");
-    expect(result.data?.violations).toHaveLength(0);
+    expect(violations).toHaveLength(0);
   });
 
   it("passes with no manifest at all", async () => {
     await mkdir(join(projectRoot, "src", "assets"), { recursive: true });
 
-    const result = await validateAssets(projectRoot);
+    const violations = await checkAssets(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.status).toBe("pass");
+    expect(violations).toHaveLength(0);
   });
 
   it("passes when all manifest entries exist on disk", async () => {
@@ -43,10 +40,9 @@ describe("phaser.assets.validate", () => {
       "assets:\n  - path: sprites/player.png\n    type: image\n",
     );
 
-    const result = await validateAssets(projectRoot);
+    const violations = await checkAssets(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.status).toBe("pass");
+    expect(violations).toHaveLength(0);
   });
 
   it("fails when manifest entry does not exist on disk (PHASER-02)", async () => {
@@ -56,12 +52,10 @@ describe("phaser.assets.validate", () => {
       "assets:\n  - path: missing.png\n    type: image\n",
     );
 
-    const result = await validateAssets(projectRoot);
+    const violations = await checkAssets(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    expect(result.data?.status).toBe("fail");
-    expect(result.data?.violations).toHaveLength(1);
-    expect(result.data?.violations[0]!.ruleId).toBe("PHASER-02");
+    expect(violations).toHaveLength(1);
+    expect(violations[0]!.ruleId).toBe("PHASER-02");
   });
 
   it("fails when asset file exists but is not in manifest (PHASER-02)", async () => {
@@ -69,13 +63,11 @@ describe("phaser.assets.validate", () => {
     await writeFile(join(projectRoot, "src", "assets", "orphan.png"), "fake-png");
     await writeFile(join(projectRoot, "src", "assets", "manifest.yaml"), "assets: []\n");
 
-    const result = await validateAssets(projectRoot);
+    const violations = await checkAssets(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    expect(result.data?.status).toBe("fail");
-    expect(result.data?.violations).toHaveLength(1);
-    expect(result.data?.violations[0]!.ruleId).toBe("PHASER-02");
-    expect(result.data?.violations[0]!.message).toContain("not listed in manifest");
+    expect(violations).toHaveLength(1);
+    expect(violations[0]!.ruleId).toBe("PHASER-02");
+    expect(violations[0]!.message).toContain("not listed in manifest");
   });
 
   it("fails when manifest has invalid YAML syntax (PHASER-02)", async () => {
@@ -85,12 +77,10 @@ describe("phaser.assets.validate", () => {
       "assets: [invalid: yaml: syntax\n",
     );
 
-    const result = await validateAssets(projectRoot);
+    const violations = await checkAssets(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    expect(result.data?.status).toBe("fail");
-    expect(result.data?.violations).toHaveLength(1);
-    expect(result.data?.violations[0]!.ruleId).toBe("PHASER-02");
-    expect(result.data?.violations[0]!.message).toContain("Failed to parse");
+    expect(violations).toHaveLength(1);
+    expect(violations[0]!.ruleId).toBe("PHASER-02");
+    expect(violations[0]!.message).toContain("Failed to parse");
   });
 });

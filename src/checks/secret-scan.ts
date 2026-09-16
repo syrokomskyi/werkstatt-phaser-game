@@ -8,6 +8,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>RFC-1100: rewritten as pure checkSecrets() on shared seams — walkFiles/readTextFiles for source discovery; command envelope moved to PHASER_CHECKS spec.</item>
   <item>RFC-1097: step 6 — compass.migrate codemod run
 
 Mechanical v1 to v2 header migration across the workspace: 942 files rewritten — CHANGE_SUMMARY windows collapsed into history, forbidden v1 blocks stripped, KEY_DECISIONS seeded from @ai-invariant comments (5 files) or TODO placeholders (103 files), blocks reordered to canonical order.</item>
@@ -17,31 +18,14 @@ Sweep batch 3: rewrote ~95 purposes across werkstatt-knowledge, werkstatt-shared
   <item>RFC-1097: sweep — werkstatt-engine clean
 
 Sweep batch 4: 73 Compass headers on headerless engine files (certification, component-runtime, isolation, evolution, testing), real KEY_DECISIONS on 75 files (kernel, cache, dht, swim, gitmesh, runtime), ~80 purpose expansions (CONTRACT-02/PURPOSE-02), non-goals on 13 CONTRACT-03 files, CS-07 history literal fix repo-wide (253 files). Policy: .template.ts/.template.astro excludedPaths. werkstatt-engine now 0 diagnostics.</item>
+  <item>RFC-1100: steps 3-6 — spec-driven checks, shared seams, scaffold table</item>
 </CHANGE_SUMMARY>
 */
 
-import { readFile, readdir } from "node:fs/promises";
-import { join, relative } from "node:path";
-import type { Dirent } from "node:fs";
-import type {
-  KernelCommandDefinition,
-  KernelCommandResult,
-} from "@warpgogol/werkstatt-engine/kernel/types";
-
-export interface SecretScanViolation {
-  ruleId: string;
-  file: string;
-  line: number;
-  message: string;
-}
-
-export interface SecretScanData {
-  command: string;
-  status: "pass" | "fail";
-  violations: SecretScanViolation[];
-}
-
-const SRC_DIR = "src";
+import { join } from "node:path";
+import { readTextFiles, walkFiles } from "@warpgogol/werkstatt-shared/share/walk-files";
+import type { StackCheckViolation } from "@warpgogol/werkstatt-shared/share/stack-checks";
+import { PHASER_PATHS } from "../paths/phaser-paths.ts";
 
 const SECRET_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
   {
@@ -70,17 +54,19 @@ const SECRET_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
   },
 ];
 
-export async function scanSecrets(
-  projectRoot: string,
-): Promise<KernelCommandResult<SecretScanData>> {
-  const violations: SecretScanViolation[] = [];
-  const srcPath = join(projectRoot, SRC_DIR);
-  const files = await listTsFiles(srcPath);
+export async function checkSecrets(projectRoot: string): Promise<StackCheckViolation[]> {
+  const violations: StackCheckViolation[] = [];
+  const srcDir = join(projectRoot, PHASER_PATHS.srcDir);
+  const files = await walkFiles(srcDir, {
+    filter: (rel) => rel.endsWith(".ts") && !rel.endsWith(".d.ts"),
+  });
+  const contents = await readTextFiles(srcDir, files);
 
-  for (const filePath of files) {
-    const content = await readFile(filePath, "utf-8");
+  for (const relPath of files) {
+    const content = contents.get(relPath);
+    if (content === undefined) continue;
+    const relFile = `${PHASER_PATHS.srcDir}/${relPath}`;
     const lines = content.split("\n");
-    const relFile = relative(projectRoot, filePath);
 
     let inBlockComment = false;
     for (let i = 0; i < lines.length; i++) {
@@ -116,41 +102,5 @@ export async function scanSecrets(
     }
   }
 
-  const status = violations.length === 0 ? "pass" : "fail";
-  return {
-    data: { command: "phaser.secret.scan", status, violations },
-    exitCode: status === "pass" ? 0 : 1,
-    summary: `phaser.secret.scan: ${status} (${violations.length} violations)`,
-  };
-}
-
-async function listTsFiles(dir: string): Promise<string[]> {
-  const results: string[] = [];
-  let entries: Dirent[];
-  try {
-    entries = await readdir(dir, { withFileTypes: true });
-  } catch {
-    return results;
-  }
-  for (const entry of entries) {
-    const fullPath = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      results.push(...(await listTsFiles(fullPath)));
-    } else if (entry.isFile() && entry.name.endsWith(".ts") && !entry.name.endsWith(".d.ts")) {
-      results.push(fullPath);
-    }
-  }
-  return results;
-}
-
-export function createSecretScanCommand(): KernelCommandDefinition<SecretScanData> {
-  return {
-    name: "phaser.secret.scan",
-    description: "Scan source for hardcoded secrets (PHASER-04)",
-    scope: "workspace",
-    cacheable: false,
-    async execute(_input, context) {
-      return scanSecrets(context.workspaceRoot);
-    },
-  };
+  return violations;
 }

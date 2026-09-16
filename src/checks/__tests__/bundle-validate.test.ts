@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
+import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { validateBundle } from "../bundle-validate.ts";
+import { checkBundle, DEFAULT_BUNDLE_BUDGET } from "../bundle-validate.ts";
 
 describe("phaser.bundle.validate", () => {
   let projectRoot: string;
@@ -15,7 +16,7 @@ describe("phaser.bundle.validate", () => {
     await rm(projectRoot, { recursive: true, force: true });
   });
 
-  it("passes when bundle is under default budget", async () => {
+  it("passes when bundle is under the configured budget", async () => {
     await mkdir(join(projectRoot, "dist"), { recursive: true });
     await writeFile(join(projectRoot, "dist", "game.js"), "console.log('hello');");
     await writeFile(
@@ -23,60 +24,51 @@ describe("phaser.bundle.validate", () => {
       `export default { bundleBudget: 5242880 };`,
     );
 
-    const result = await validateBundle(projectRoot);
+    const violations = await checkBundle(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.status).toBe("pass");
-    expect(result.data?.bundleBytes).toBeLessThan(result.data?.budgetBytes ?? 0);
+    expect(violations).toHaveLength(0);
   });
 
   it("fails when bundle exceeds budget (PHASER-03)", async () => {
     await mkdir(join(projectRoot, "dist"), { recursive: true });
-    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-    let largeContent = "";
-    for (let i = 0; i < 1000; i++) {
-      largeContent += chars[Math.floor(Math.random() * chars.length)];
-    }
-    await writeFile(join(projectRoot, "dist", "game.js"), largeContent);
+    await writeFile(join(projectRoot, "dist", "game.js"), randomBytes(64 * 1024));
     await writeFile(join(projectRoot, "phaser.config.ts"), `export default { bundleBudget: 100 };`);
 
-    const result = await validateBundle(projectRoot);
+    const violations = await checkBundle(projectRoot);
 
-    expect(result.exitCode).toBe(1);
-    expect(result.data?.status).toBe("fail");
-    expect(result.data?.violations).toHaveLength(1);
-    expect(result.data?.violations[0]!.ruleId).toBe("PHASER-03");
-    expect(result.data?.violations[0]!.bundleBytes).toBeGreaterThan(0);
-    expect(result.data?.violations[0]!.budgetBytes).toBe(100);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]!.ruleId).toBe("PHASER-03");
+    expect(violations[0]!.details?.bundleBytes).toBeGreaterThan(0);
+    expect(violations[0]!.details?.budgetBytes).toBe(100);
   });
 
   it("uses default 5 MB budget when phaser.config.ts has no bundleBudget", async () => {
     await mkdir(join(projectRoot, "dist"), { recursive: true });
-    await writeFile(join(projectRoot, "dist", "game.js"), "console.log('hello');");
+    // Incompressible payload larger than the default budget.
+    await writeFile(join(projectRoot, "dist", "game.js"), randomBytes(6 * 1024 * 1024));
     await writeFile(join(projectRoot, "phaser.config.ts"), `export default { scenes: [] };`);
 
-    const result = await validateBundle(projectRoot);
+    const violations = await checkBundle(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.budgetBytes).toBe(5 * 1024 * 1024);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]!.details?.budgetBytes).toBe(DEFAULT_BUNDLE_BUDGET);
   });
 
   it("uses default budget when phaser.config.ts is missing", async () => {
     await mkdir(join(projectRoot, "dist"), { recursive: true });
-    await writeFile(join(projectRoot, "dist", "game.js"), "console.log('hello');");
+    await writeFile(join(projectRoot, "dist", "game.js"), randomBytes(6 * 1024 * 1024));
 
-    const result = await validateBundle(projectRoot);
+    const violations = await checkBundle(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.budgetBytes).toBe(5 * 1024 * 1024);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]!.details?.budgetBytes).toBe(DEFAULT_BUNDLE_BUDGET);
   });
 
   it("passes with empty dist/ (zero bundle)", async () => {
     await mkdir(join(projectRoot, "dist"), { recursive: true });
 
-    const result = await validateBundle(projectRoot);
+    const violations = await checkBundle(projectRoot);
 
-    expect(result.exitCode).toBe(0);
-    expect(result.data?.bundleBytes).toBe(0);
+    expect(violations).toHaveLength(0);
   });
 });

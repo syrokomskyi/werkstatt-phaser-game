@@ -50,15 +50,18 @@ src/
     phaser-paths.ts                 # Константы путей Phaser-стека
   invariants/
     phaser-invariants.ts            # Декларации инвариантов PHASER-01..05
+  config/
+    phaser-config.ts                # readPhaserConfig — синтаксическая модель phaser.config.ts
   checks/
-    assets-validate.ts              # phaser.assets.validate (PHASER-02)
-    scenes-validate.ts              # phaser.scenes.validate (PHASER-01)
-    bundle-validate.ts              # phaser.bundle.validate (PHASER-03)
-    secret-scan.ts                  # phaser.secret.scan (PHASER-04)
-    typescript-validate.ts          # phaser.typescript.validate (PHASER-05)
-    index.ts                        # checkGate — запуск всех 5 валидаторов
-    module.ts                       # Kernel module регистрации валидаторов
-    __tests__/                      # Модульные тесты валидаторов
+    phaser-checks.ts                # PHASER_CHECKS — spec-таблица всех валидаторов (RFC-1100)
+    assets-validate.ts              # checkAssets (PHASER-02)
+    scenes-validate.ts              # checkScenes (PHASER-01)
+    bundle-validate.ts              # checkBundle (PHASER-03)
+    secret-scan.ts                  # checkSecrets (PHASER-04)
+    typescript-validate.ts          # checkTypeScript (PHASER-05)
+    index.ts                        # checkGate — делегирует PHASER_CHECK_DECLARATIONS.runCheckGate
+    module.ts                       # Kernel module — PHASER_CHECK_DECLARATIONS.commands
+    __tests__/                      # Модульные тесты валидаторов и spec-таблицы
   build/
     vite-build.ts                   # hooks.build — запускает npx vite build
   deploy/
@@ -144,6 +147,24 @@ src/
 | PHASER-05 | TypeScript-first: нет `.js` файлов, нет `any`, нет `@ts-ignore`, использовать `Phaser.Types.Core.GameConfig` и `SCENE_KEYS` | `phaser.typescript.validate` |
 
 `checkGate` запускает все 5 валидаторов последовательно. Все должны пройти.
+
+## Spec-table архитектура (RFC-1100)
+
+Плагин использует spec-driven checks: единственная точка декларации — `PHASER_CHECKS` в `src/checks/phaser-checks.ts`. Из неё через `defineStackChecks` (`@warpgogol/werkstatt-shared/share/stack-checks`) выводятся:
+
+- `PHASER_CHECK_DECLARATIONS.commands` — kernel-команды для `module.ts`;
+- `PHASER_CHECK_DECLARATIONS.runCheckGate` — тело хука `checkGate`;
+- `PHASER_CHECK_DECLARATIONS.invariantRows` — основа `PHASER_INVARIANTS`.
+
+Правила для агентов:
+
+- Каждый валидатор — чистая функция `checkX(projectRoot): Promise<StackCheckViolation[]>`. Она НЕ формирует `KernelCommandResult` и НЕ регистрирует команду — это делает spec-таблица.
+- Файловый обход — только через `walkFiles`/`readTextFile`/`readTextFiles`/`readBinaryFiles` из `@warpgogol/werkstatt-shared/share/walk-files`. Прямые `readdir`/`readFile` в валидаторах запрещены.
+- Пути — только через `PHASER_PATHS` из `src/paths/phaser-paths.ts`. Литералы `src/scenes`, `phaser.config.ts`, `src/assets/manifest.yaml` в `src/checks/` запрещены (проверяется тестом `phaser-checks.test.ts`).
+- Данные `phaser.config.ts` — только через `readPhaserConfig` (`src/config/phaser-config.ts`), который парсит файл синтаксически через `ts.createSourceFile`. Regex-парсинг конфига запрещён.
+- Subprocess — только через `runTool` из `@warpgogol/werkstatt-shared/share/run-tool` (`vite-build.ts`, deploy-адаптеры). Прямой `node:child_process` запрещён; тесты используют инъектируемый `ToolExecutor`, а не `vi.mock("node:child_process")`.
+- Скаффолд рендерится из таблицы `SCAFFOLD_FILES` в `scaffold-project.ts`; `filesCreated` выводится из таблицы, `projectId` передаётся параметром рендера.
+- Новый инвариант PHASER-0N добавляется одной строкой в `PHASER_CHECKS` + функцией `checkX` в отдельном файле + описанием в `INVARIANT_DESCRIPTIONS`.
 
 ## Инъекция учётных данных
 

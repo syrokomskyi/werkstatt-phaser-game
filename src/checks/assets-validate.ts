@@ -7,6 +7,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>RFC-1100: rewritten as pure checkAssets() on shared seams — walkFiles for asset discovery, readTextFile for the manifest; command envelope moved to PHASER_CHECKS spec.</item>
   <item>RFC-1097: step 6 — compass.migrate codemod run
 
 Mechanical v1 to v2 header migration across the workspace: 942 files rewritten — CHANGE_SUMMARY windows collapsed into history, forbidden v1 blocks stripped, KEY_DECISIONS seeded from @ai-invariant comments (5 files) or TODO placeholders (103 files), blocks reordered to canonical order.</item>
@@ -16,17 +17,15 @@ Sweep batch 3: rewrote ~95 purposes across werkstatt-knowledge, werkstatt-shared
   <item>RFC-1097: sweep — werkstatt-engine clean
 
 Sweep batch 4: 73 Compass headers on headerless engine files (certification, component-runtime, isolation, evolution, testing), real KEY_DECISIONS on 75 files (kernel, cache, dht, swim, gitmesh, runtime), ~80 purpose expansions (CONTRACT-02/PURPOSE-02), non-goals on 13 CONTRACT-03 files, CS-07 history literal fix repo-wide (253 files). Policy: .template.ts/.template.astro excludedPaths. werkstatt-engine now 0 diagnostics.</item>
+  <item>RFC-1100: steps 3-6 — spec-driven checks, shared seams, scaffold table</item>
 </CHANGE_SUMMARY>
 */
 
-import { readFile, readdir, access } from "node:fs/promises";
 import { join } from "node:path";
-import type { Dirent } from "node:fs";
 import { parse as parseYaml } from "yaml";
-import type {
-  KernelCommandDefinition,
-  KernelCommandResult,
-} from "@warpgogol/werkstatt-engine/kernel/types";
+import { readTextFile, walkFiles } from "@warpgogol/werkstatt-shared/share/walk-files";
+import type { StackCheckViolation } from "@warpgogol/werkstatt-shared/share/stack-checks";
+import { PHASER_PATHS } from "../paths/phaser-paths.ts";
 
 export interface AssetManifestEntry {
   path: string;
@@ -37,116 +36,52 @@ export interface AssetManifest {
   assets: AssetManifestEntry[];
 }
 
-export interface AssetsValidateViolation {
-  ruleId: string;
-  file: string;
-  message: string;
-}
+const MANIFEST_FILENAME = "manifest.yaml";
 
-export interface AssetsValidateData {
-  command: string;
-  status: "pass" | "fail";
-  violations: AssetsValidateViolation[];
-}
-
-const ASSETS_DIR = "src/assets";
-const MANIFEST_PATH = "src/assets/manifest.yaml";
-
-export async function validateAssets(
-  projectRoot: string,
-): Promise<KernelCommandResult<AssetsValidateData>> {
-  const violations: AssetsValidateViolation[] = [];
-  const manifestPath = join(projectRoot, MANIFEST_PATH);
+export async function checkAssets(projectRoot: string): Promise<StackCheckViolation[]> {
+  const violations: StackCheckViolation[] = [];
 
   let manifest: AssetManifest = { assets: [] };
-  let manifestParseError: string | undefined;
-  try {
-    const raw = await readFile(manifestPath, "utf-8");
+  const raw = await readTextFile(join(projectRoot, PHASER_PATHS.assetManifest));
+  if (raw !== null) {
     try {
       const parsed = parseYaml(raw) as AssetManifest | undefined;
       if (parsed && Array.isArray(parsed.assets)) {
         manifest = parsed;
       }
     } catch (parseErr) {
-      manifestParseError = parseErr instanceof Error ? parseErr.message : String(parseErr);
-    }
-  } catch {
-    // File not found = empty manifest (valid for freshly scaffolded projects)
-  }
-
-  if (manifestParseError) {
-    violations.push({
-      ruleId: "PHASER-02",
-      file: MANIFEST_PATH,
-      message: `Failed to parse asset manifest: ${manifestParseError}`,
-    });
-  }
-
-  for (const entry of manifest.assets) {
-    const fullPath = join(projectRoot, ASSETS_DIR, entry.path);
-    try {
-      await access(fullPath);
-    } catch {
+      const message = parseErr instanceof Error ? parseErr.message : String(parseErr);
       violations.push({
         ruleId: "PHASER-02",
-        file: join(ASSETS_DIR, entry.path),
+        file: PHASER_PATHS.assetManifest,
+        message: `Failed to parse asset manifest: ${message}`,
+      });
+    }
+  }
+  // Missing manifest = empty manifest (valid for freshly scaffolded projects)
+
+  const assetFiles = new Set(await walkFiles(join(projectRoot, PHASER_PATHS.assetsDir)));
+
+  for (const entry of manifest.assets) {
+    if (!assetFiles.has(entry.path)) {
+      violations.push({
+        ruleId: "PHASER-02",
+        file: `${PHASER_PATHS.assetsDir}/${entry.path}`,
         message: `Asset listed in manifest but not found on disk: ${entry.path}`,
       });
     }
   }
 
   const manifestPaths = new Set(manifest.assets.map((a) => a.path));
-  const assetFiles = await listAssetFiles(join(projectRoot, ASSETS_DIR));
   for (const relPath of assetFiles) {
-    if (relPath !== "manifest.yaml" && !manifestPaths.has(relPath)) {
+    if (relPath !== MANIFEST_FILENAME && !manifestPaths.has(relPath)) {
       violations.push({
         ruleId: "PHASER-02",
-        file: join(ASSETS_DIR, relPath),
+        file: `${PHASER_PATHS.assetsDir}/${relPath}`,
         message: `Asset file exists but is not listed in manifest: ${relPath}`,
       });
     }
   }
 
-  const status = violations.length === 0 ? "pass" : "fail";
-  return {
-    data: { command: "phaser.assets.validate", status, violations },
-    exitCode: status === "pass" ? 0 : 1,
-    summary: `phaser.assets.validate: ${status} (${violations.length} violations)`,
-  };
-}
-
-async function listAssetFiles(dir: string): Promise<string[]> {
-  const results: string[] = [];
-  let entries: Dirent[];
-  try {
-    entries = await readdir(dir, { withFileTypes: true });
-  } catch {
-    return results;
-  }
-  for (const entry of entries) {
-    if (entry.isDirectory()) {
-      const sub = await listAssetFiles(join(dir, entry.name));
-      for (const s of sub) {
-        results.push(join(entry.name, s));
-      }
-    } else {
-      results.push(entry.name);
-    }
-  }
-  return results;
-}
-
-export function createAssetsValidateCommand(): KernelCommandDefinition<AssetsValidateData> {
-  return {
-    name: "phaser.assets.validate",
-    contract: "phaser",
-    rules: [],
-    description: "Validate asset manifest completeness (PHASER-02)",
-    scope: "workspace",
-    cacheable: false,
-    async execute(_input, context) {
-      const projectRoot = context.workspaceRoot;
-      return validateAssets(projectRoot);
-    },
-  };
+  return violations;
 }

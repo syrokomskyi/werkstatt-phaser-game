@@ -9,6 +9,7 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
+  <item>RFC-1100: subprocess call moved to shared runTool seam with injectable ToolExecutor; dist/ preflight via requireDist; no direct node:child_process import.</item>
   <item>RFC-1097: step 6 — compass.migrate codemod run
 
 Mechanical v1 to v2 header migration across the workspace: 942 files rewritten — CHANGE_SUMMARY windows collapsed into history, forbidden v1 blocks stripped, KEY_DECISIONS seeded from @ai-invariant comments (5 files) or TODO placeholders (103 files), blocks reordered to canonical order.</item>
@@ -18,12 +19,12 @@ Sweep batch 3: rewrote ~95 purposes across werkstatt-knowledge, werkstatt-shared
   <item>RFC-1097: sweep — werkstatt-engine clean
 
 Sweep batch 4: 73 Compass headers on headerless engine files (certification, component-runtime, isolation, evolution, testing), real KEY_DECISIONS on 75 files (kernel, cache, dht, swim, gitmesh, runtime), ~80 purpose expansions (CONTRACT-02/PURPOSE-02), non-goals on 13 CONTRACT-03 files, CS-07 history literal fix repo-wide (253 files). Policy: .template.ts/.template.astro excludedPaths. werkstatt-engine now 0 diagnostics.</item>
+  <item>RFC-1100: steps 3-6 — spec-driven checks, shared seams, scaffold table</item>
 </CHANGE_SUMMARY>
 */
 
-import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { runTool } from "@warpgogol/werkstatt-shared/share/run-tool";
+import type { ToolExecutor } from "@warpgogol/werkstatt-shared/share/run-tool";
 import type { DeployResult } from "./types.ts";
 
 export interface CloudflarePagesDeployConfig {
@@ -37,65 +38,62 @@ export interface CloudflarePagesAdapter {
   deploy(workpiecePath: string, config: CloudflarePagesDeployConfig): DeployResult;
 }
 
-export function createCloudflarePagesAdapter(): CloudflarePagesAdapter {
+export function createCloudflarePagesAdapter(executor?: ToolExecutor): CloudflarePagesAdapter {
   return {
     deploy(workpiecePath: string, config: CloudflarePagesDeployConfig): DeployResult {
-      const distDir = join(workpiecePath, "dist");
-      if (!existsSync(distDir)) {
-        return {
-          success: false,
-          errors: [`dist/ directory not found at ${distDir} — run build first`],
-        };
-      }
-
       if (!config.apiToken) {
         return {
           success: false,
-          errors: ["Cloudflare API token not provided in channel config (deploy.cloudflare.apiToken)"],
+          errors: [
+            "Cloudflare API token not provided in channel config (deploy.cloudflare.apiToken)",
+          ],
         };
       }
 
       if (!config.projectName) {
         return {
           success: false,
-          errors: ["Cloudflare project name not provided in channel config (deploy.cloudflare.projectName)"],
+          errors: [
+            "Cloudflare project name not provided in channel config (deploy.cloudflare.projectName)",
+          ],
         };
       }
 
-      try {
-        const args = ["wrangler", "pages", "deploy", "dist", "--project-name", config.projectName];
-        if (config.branch) {
-          args.push("--branch", config.branch);
-        }
+      const env: Record<string, string> = { CLOUDFLARE_API_TOKEN: config.apiToken };
+      if (config.accountId) {
+        env.CLOUDFLARE_ACCOUNT_ID = config.accountId;
+      }
 
-        const env: Record<string, string> = {
-          ...process.env,
-          CLOUDFLARE_API_TOKEN: config.apiToken,
-        };
+      const args = ["wrangler", "pages", "deploy", "dist", "--project-name", config.projectName];
+      if (config.branch) {
+        args.push("--branch", config.branch);
+      }
 
-        if (config.accountId) {
-          env.CLOUDFLARE_ACCOUNT_ID = config.accountId;
-        }
-
-        execFileSync("npx", args, {
+      const result = runTool(
+        {
+          bin: "npx",
+          args,
           cwd: workpiecePath,
-          encoding: "utf-8",
-          timeout: 120_000,
-          stdio: ["pipe", "pipe", "pipe"],
           env,
-        });
-
-        return {
-          success: true,
-          url: `https://${config.projectName}.pages.dev`,
-        };
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+          timeoutMs: 120_000,
+          requireDist: true,
+        },
+        executor,
+      );
+      if (!result.success) {
         return {
           success: false,
-          errors: [`Cloudflare Pages deploy failed: ${message}`],
+          errors:
+            result.failedAt === "exec"
+              ? [`Cloudflare Pages deploy failed: ${result.errors?.join("; ")}`]
+              : result.errors,
         };
       }
+
+      return {
+        success: true,
+        url: `https://${config.projectName}.pages.dev`,
+      };
     },
   };
 }
