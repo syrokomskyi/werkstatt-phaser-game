@@ -1,15 +1,16 @@
 /*
 <MODULE_CONTRACT>
 <purpose>phaser.bundle.validate — measures gzipped bundle size against budget (PHASER-03).</purpose>
-<keywords>validator, bundle, phaser, budget, gzip</keywords>
+
 <non-goals>
   <item>Does not modify files — read-only validator.</item>
   <item>Does not run the build — measures existing dist/ output only.</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial bundle validator — gzip each file in dist/, sum sizes, compare to budget.</item>
-  <item>Migration from werkstatt-game: renamed command and rule IDs from game.* to phaser.*.</item>
+  <item>RFC-1097: step 6 — compass.migrate codemod run
+
+Mechanical v1 to v2 header migration across the workspace: 942 files rewritten — CHANGE_SUMMARY windows collapsed into <history>, forbidden v1 blocks stripped, KEY_DECISIONS seeded from @ai-invariant comments (5 files) or TODO placeholders (103 files), blocks reordered to canonical order.</item>
 </CHANGE_SUMMARY>
 */
 

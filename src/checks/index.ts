@@ -1,18 +1,16 @@
 /*
 <MODULE_CONTRACT>
 <purpose>Check gate composition for the Phaser plugin.</purpose>
-<keywords>checkgate, validators, phaser</keywords>
-<responsibilities>
-  <item>Defines which validators run in checkGate: all 4 (assets, scenes, bundle, secret-scan).</item>
-  <item>Aggregates results from each validator into a single HookResult.</item>
-</responsibilities>
+
+
 <non-goals>
   <item>Do not implement validator logic — orchestrate validators only.</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial check gate composition running assets, scenes, bundle, and secret-scan validators.</item>
-  <item>Migration from werkstatt-game: renamed from game to phaser.</item>
+  <item>RFC-1097: step 6 — compass.migrate codemod run
+
+Mechanical v1 to v2 header migration across the workspace: 942 files rewritten — CHANGE_SUMMARY windows collapsed into <history>, forbidden v1 blocks stripped, KEY_DECISIONS seeded from @ai-invariant comments (5 files) or TODO placeholders (103 files), blocks reordered to canonical order.</item>
 </CHANGE_SUMMARY>
 */
 

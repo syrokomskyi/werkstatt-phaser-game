@@ -1,24 +1,18 @@
 /*
 <MODULE_CONTRACT>
 <purpose>Phaser project scaffold hook — generates a new Phaser project with scene boilerplate.</purpose>
-<keywords>scaffold, onboarding, phaser</keywords>
-<responsibilities>
-  <item>Creates src/scenes/scene-keys.ts with SCENE_KEYS constant and SceneKey type.</item>
-  <item>Creates src/scenes/boot.ts with typed boot scene using SCENE_KEYS.</item>
-  <item>Creates src/assets/manifest.yaml with an empty manifest skeleton.</item>
-  <item>Creates phaser.config.ts using Phaser.Types.Core.GameConfig with boot scene and bundleBudget.</item>
-  <item>Creates src/main.ts without as-cast, package.json, tsconfig.json, vite.config.ts for the game project.</item>
-</responsibilities>
+
+
 <non-goals>
   <item>Does not install dependencies — the consumer runs pnpm install after scaffold.</item>
   <item>Does not create game content — games are projects, not plugin content.</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial Phaser project scaffold — boot scene, asset manifest, phaser.config.ts, package.json, tsconfig.json, vite.config.ts.</item>
-  <item>Migration from werkstatt-game: renamed from game to phaser.</item>
-  <item>Fix boot scene infinite loop, add missing Phaser import in phaser.config.ts, use writeFileIfChanged for idempotent writes (RFC-0345).</item>
   <item>RFC-0933: TypeScript-first scaffold — Phaser.Types.Core.GameConfig, SCENE_KEYS constants, typed lifecycle, no as-cast in main.ts.</item>
+  <item>RFC-1097: step 6 — compass.migrate codemod run
+
+Mechanical v1 to v2 header migration across the workspace: 942 files rewritten — CHANGE_SUMMARY windows collapsed into <history>, forbidden v1 blocks stripped, KEY_DECISIONS seeded from @ai-invariant comments (5 files) or TODO placeholders (103 files), blocks reordered to canonical order.</item>
 </CHANGE_SUMMARY>
 */
 

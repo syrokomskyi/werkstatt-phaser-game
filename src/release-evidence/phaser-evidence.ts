@@ -1,22 +1,18 @@
 /*
 <MODULE_CONTRACT>
 <purpose>Phaser release evidence hook — generates bundle hash, asset manifest hash, scene registry hash.</purpose>
-<keywords>release, evidence, phaser, hash</keywords>
-<responsibilities>
-  <item>Computes SHA-256 hash of the dist/ bundle (all files concatenated).</item>
-  <item>Computes SHA-256 hash of the asset manifest (src/assets/manifest.yaml).</item>
-  <item>Computes SHA-256 hash of the scene registry (phaser.config.ts).</item>
-  <item>Returns evidence object with all three hashes.</item>
-</responsibilities>
+
+
 <non-goals>
   <item>Does not verify hashes — that is the integrity module's job.</item>
   <item>Does not modify files — read-only hook.</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial release evidence hook — bundle hash, asset manifest hash, scene registry hash.</item>
-  <item>Migration from werkstatt-game: renamed from game to phaser.</item>
   <item>DNA-53: replace node:crypto createHash with byteHashFile/byteHash from @warpgogol/werkstatt-engine/fingerprint.</item>
+  <item>RFC-1097: step 6 — compass.migrate codemod run
+
+Mechanical v1 to v2 header migration across the workspace: 942 files rewritten — CHANGE_SUMMARY windows collapsed into <history>, forbidden v1 blocks stripped, KEY_DECISIONS seeded from @ai-invariant comments (5 files) or TODO placeholders (103 files), blocks reordered to canonical order.</item>
 </CHANGE_SUMMARY>
 */
 

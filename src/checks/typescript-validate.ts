@@ -1,15 +1,8 @@
 /*
 <MODULE_CONTRACT>
 <purpose>phaser.typescript.validate — PHASER-05 TypeScript-first enforcement.</purpose>
-<keywords>validator, typescript, phaser, best-practices</keywords>
-<responsibilities>
-  <item>TS-01: No .js files in src/.</item>
-  <item>TS-02: No 'any' type or 'as any' cast in source.</item>
-  <item>TS-03: No @ts-ignore or @ts-nocheck directives.</item>
-  <item>TS-04: phaser.config.ts must use Phaser.Types.Core.GameConfig, not a custom interface.</item>
-  <item>TS-05: Scene keys in super({ key: "..." }) must reference SCENE_KEYS constant.</item>
-  <item>TS-06: Files using Phaser. namespace must import Phaser.</item>
-</responsibilities>
+
+
 <non-goals>
   <item>Does not modify files — read-only validator.</item>
   <item>Does not run tsc — regex-based source scanning only.</item>
@@ -17,7 +10,9 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial TypeScript-first validator — 6 sub-rules (TS-01..06) enforcing PHASER-05 (RFC-0933).</item>
+  <item>RFC-1097: step 6 — compass.migrate codemod run
+
+Mechanical v1 to v2 header migration across the workspace: 942 files rewritten — CHANGE_SUMMARY windows collapsed into <history>, forbidden v1 blocks stripped, KEY_DECISIONS seeded from @ai-invariant comments (5 files) or TODO placeholders (103 files), blocks reordered to canonical order.</item>
 </CHANGE_SUMMARY>
 */
 

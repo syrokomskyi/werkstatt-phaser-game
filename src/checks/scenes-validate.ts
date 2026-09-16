@@ -1,15 +1,15 @@
 /*
 <MODULE_CONTRACT>
 <purpose>phaser.scenes.validate — checks scene registry consistency (PHASER-01).</purpose>
-<keywords>validator, scenes, phaser, registry</keywords>
+
 <non-goals>
   <item>Does not modify files — read-only validator.</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial scenes validator — scans src/scenes/, checks phaser.config.ts registration.</item>
-  <item>Migration from werkstatt-game: renamed command and rule IDs from game.* to phaser.*.</item>
-  <item>Restrict keyRegex to only match keys inside scene arrays to prevent false positives from other config objects.</item>
+  <item>RFC-1097: step 6 — compass.migrate codemod run
+
+Mechanical v1 to v2 header migration across the workspace: 942 files rewritten — CHANGE_SUMMARY windows collapsed into <history>, forbidden v1 blocks stripped, KEY_DECISIONS seeded from @ai-invariant comments (5 files) or TODO placeholders (103 files), blocks reordered to canonical order.</item>
 </CHANGE_SUMMARY>
 */
 

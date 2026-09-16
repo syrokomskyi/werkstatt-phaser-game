@@ -1,20 +1,17 @@
 /*
 <MODULE_CONTRACT>
 <purpose>Cloudflare Pages deploy adapter for the Phaser plugin.</purpose>
-<keywords>deploy, cloudflare, pages, phaser</keywords>
-<responsibilities>
-  <item>Deploys dist/ to Cloudflare Pages using npx wrangler pages deploy.</item>
-  <item>Credentials (Cloudflare API token) injected from channel config: deploy.cloudflare.apiToken.</item>
-  <item>Never reads credentials from environment variables directly.</item>
-</responsibilities>
+
+
 <non-goals>
   <item>Does not build — build hook runs before deploy.</item>
   <item>Does not manage DNS or custom domains.</item>
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial Cloudflare Pages deploy adapter — npx wrangler pages deploy.</item>
-  <item>Fix: import DeployResult from shared deploy/types.ts instead of defining locally.</item>
+  <item>RFC-1097: step 6 — compass.migrate codemod run
+
+Mechanical v1 to v2 header migration across the workspace: 942 files rewritten — CHANGE_SUMMARY windows collapsed into <history>, forbidden v1 blocks stripped, KEY_DECISIONS seeded from @ai-invariant comments (5 files) or TODO placeholders (103 files), blocks reordered to canonical order.</item>
 </CHANGE_SUMMARY>
 */
 

@@ -1,13 +1,8 @@
 /*
 <MODULE_CONTRACT>
 <purpose>Werkstatt Phaser plugin entry point — Phaser + Vite + Turborepo stack implementing werkstatt/plugin@1.</purpose>
-<keywords>plugin, phaser, game, werkstatt</keywords>
-<responsibilities>
-  <item>Exports werkstattPhaserPlugin: WerkstattPlugin with profileId "phaser-turborepo".</item>
-  <item>Registers Phaser-stack engine modules via moduleLoaders (checks).</item>
-  <item>Provides deploy adapters (github-pages, cloudflare-pages) and lifecycle hooks.</item>
-  <item>Declares Phaser path conventions via StackPathConventions.</item>
-</responsibilities>
+
+
 <non-goals>
   <item>Do not implement engine logic — delegate to @warpgogol/werkstatt-engine.</item>
   <item>Do not import stack-specific dependencies into the engine package.</item>
@@ -15,8 +10,9 @@
 </non-goals>
 </MODULE_CONTRACT>
 <CHANGE_SUMMARY>
-  <item>Initial Phaser plugin entry point — Phaser path conventions, check module loader, deploy adapters, lifecycle hooks, PHASER-01..04 invariants.</item>
-  <item>Migration from werkstatt-game to werkstatt-phaser — renamed plugin id, commands, and invariants. Removed onboarding module loader (scaffold handled via scaffoldProject hook directly).</item>
+  <item>RFC-1097: step 6 — compass.migrate codemod run
+
+Mechanical v1 to v2 header migration across the workspace: 942 files rewritten — CHANGE_SUMMARY windows collapsed into <history>, forbidden v1 blocks stripped, KEY_DECISIONS seeded from @ai-invariant comments (5 files) or TODO placeholders (103 files), blocks reordered to canonical order.</item>
 </CHANGE_SUMMARY>
 */
 
