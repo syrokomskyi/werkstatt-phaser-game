@@ -7,7 +7,7 @@ import type {
   ToolExecutor,
   ToolResult,
   ToolSpec,
-} from "@warpgogol/werkstatt-shared/share/run-tool";
+} from "@warpgogol/werkstatt-shared/stack/run-tool";
 
 function recordingExecutor(
   calls: ToolSpec[],

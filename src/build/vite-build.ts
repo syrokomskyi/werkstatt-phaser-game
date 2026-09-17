@@ -20,7 +20,7 @@ Sweep batch 4: 73 Compass headers on headerless engine files (certification, com
 </CHANGE_SUMMARY>
 */
 
-import { runTool } from "@warpgogol/werkstatt-shared/share/run-tool";
+import { runTool } from "@warpgogol/werkstatt-shared/stack/run-tool";
 import type { PluginHookContext, HookResult } from "@warpgogol/werkstatt-shared/plugin";
 
 export async function runViteBuild(ctx: PluginHookContext): Promise<HookResult> {

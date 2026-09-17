@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { PHASER_CHECKS, PHASER_CHECK_DECLARATIONS } from "../phaser-checks.ts";
 import { PHASER_INVARIANTS } from "../../invariants/phaser-invariants.ts";
-import type { StackCheckData } from "@warpgogol/werkstatt-shared/share/stack-checks";
+import type { StackCheckData } from "@warpgogol/werkstatt-shared/stack/stack-checks";
 import type {
   KernelCommandInput,
   KernelRuntimeContext,

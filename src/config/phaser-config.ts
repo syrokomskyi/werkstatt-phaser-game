@@ -17,7 +17,7 @@ the file or regex-parsing config text.</purpose>
 
 import ts from "typescript";
 import { join } from "node:path";
-import { readTextFile } from "@warpgogol/werkstatt-shared/share/walk-files";
+import { readTextFile } from "@warpgogol/werkstatt-shared/stack/walk-files";
 import { PHASER_PATHS } from "../paths/phaser-paths.ts";
 
 export interface PhaserConfigModel {

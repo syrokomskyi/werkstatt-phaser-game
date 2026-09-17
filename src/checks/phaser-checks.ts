@@ -15,8 +15,8 @@ rows all derive from this table via defineStackChecks.</purpose>
 </CHANGE_SUMMARY>
 */
 
-import { defineStackChecks } from "@warpgogol/werkstatt-shared/share/stack-checks";
-import type { StackCheckSpec } from "@warpgogol/werkstatt-shared/share/stack-checks";
+import { defineStackChecks } from "@warpgogol/werkstatt-shared/stack/stack-checks";
+import type { StackCheckSpec } from "@warpgogol/werkstatt-shared/stack/stack-checks";
 import { PHASER_PATHS } from "../paths/phaser-paths.ts";
 import { checkScenes } from "./scenes-validate.ts";
 import { checkAssets } from "./assets-validate.ts";

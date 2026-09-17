@@ -150,7 +150,7 @@ src/
 
 ## Spec-table архитектура (RFC-1100)
 
-Плагин использует spec-driven checks: единственная точка декларации — `PHASER_CHECKS` в `src/checks/phaser-checks.ts`. Из неё через `defineStackChecks` (`@warpgogol/werkstatt-shared/share/stack-checks`) выводятся:
+Плагин использует spec-driven checks: единственная точка декларации — `PHASER_CHECKS` в `src/checks/phaser-checks.ts`. Из неё через `defineStackChecks` (`@warpgogol/werkstatt-shared/stack/stack-checks`) выводятся:
 
 - `PHASER_CHECK_DECLARATIONS.commands` — kernel-команды для `module.ts`;
 - `PHASER_CHECK_DECLARATIONS.runCheckGate` — тело хука `checkGate`;
@@ -159,10 +159,10 @@ src/
 Правила для агентов:
 
 - Каждый валидатор — чистая функция `checkX(projectRoot): Promise<StackCheckViolation[]>`. Она НЕ формирует `KernelCommandResult` и НЕ регистрирует команду — это делает spec-таблица.
-- Файловый обход — только через `walkFiles`/`readTextFile`/`readTextFiles`/`readBinaryFiles` из `@warpgogol/werkstatt-shared/share/walk-files`. Прямые `readdir`/`readFile` в валидаторах запрещены.
+- Файловый обход — только через `walkFiles`/`readTextFile`/`readTextFiles`/`readBinaryFiles` из `@warpgogol/werkstatt-shared/stack/walk-files`. Прямые `readdir`/`readFile` в валидаторах запрещены.
 - Пути — только через `PHASER_PATHS` из `src/paths/phaser-paths.ts`. Литералы `src/scenes`, `phaser.config.ts`, `src/assets/manifest.yaml` в `src/checks/` запрещены (проверяется тестом `phaser-checks.test.ts`).
 - Данные `phaser.config.ts` — только через `readPhaserConfig` (`src/config/phaser-config.ts`), который парсит файл синтаксически через `ts.createSourceFile`. Regex-парсинг конфига запрещён.
-- Subprocess — только через `runTool` из `@warpgogol/werkstatt-shared/share/run-tool` (`vite-build.ts`, deploy-адаптеры). Прямой `node:child_process` запрещён; тесты используют инъектируемый `ToolExecutor`, а не `vi.mock("node:child_process")`.
+- Subprocess — только через `runTool` из `@warpgogol/werkstatt-shared/stack/run-tool` (`vite-build.ts`, deploy-адаптеры). Прямой `node:child_process` запрещён; тесты используют инъектируемый `ToolExecutor`, а не `vi.mock("node:child_process")`.
 - Скаффолд рендерится из таблицы `SCAFFOLD_FILES` в `scaffold-project.ts`; `filesCreated` выводится из таблицы, `projectId` передаётся параметром рендера.
 - Новый инвариант PHASER-0N добавляется одной строкой в `PHASER_CHECKS` + функцией `checkX` в отдельном файле + описанием в `INVARIANT_DESCRIPTIONS`.
 

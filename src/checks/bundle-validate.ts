@@ -24,8 +24,8 @@ Sweep batch 4: 73 Compass headers on headerless engine files (certification, com
 
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
-import { readBinaryFiles, walkFiles } from "@warpgogol/werkstatt-shared/share/walk-files";
-import type { StackCheckViolation } from "@warpgogol/werkstatt-shared/share/stack-checks";
+import { readBinaryFiles, walkFiles } from "@warpgogol/werkstatt-shared/stack/walk-files";
+import type { StackCheckViolation } from "@warpgogol/werkstatt-shared/stack/stack-checks";
 import { readPhaserConfig } from "../config/phaser-config.ts";
 import { PHASER_PATHS } from "../paths/phaser-paths.ts";
 

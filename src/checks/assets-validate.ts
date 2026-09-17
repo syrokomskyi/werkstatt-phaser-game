@@ -23,8 +23,8 @@ Sweep batch 4: 73 Compass headers on headerless engine files (certification, com
 
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
-import { readTextFile, walkFiles } from "@warpgogol/werkstatt-shared/share/walk-files";
-import type { StackCheckViolation } from "@warpgogol/werkstatt-shared/share/stack-checks";
+import { readTextFile, walkFiles } from "@warpgogol/werkstatt-shared/stack/walk-files";
+import type { StackCheckViolation } from "@warpgogol/werkstatt-shared/stack/stack-checks";
 import { PHASER_PATHS } from "../paths/phaser-paths.ts";
 
 export interface AssetManifestEntry {
