@@ -10,7 +10,8 @@
     ],
     "rootDir": ".",
     "outDir": "dist",
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "strict": true
   },
   "include": [
     "src/**/*.ts"
